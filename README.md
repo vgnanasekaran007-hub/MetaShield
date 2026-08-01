@@ -9,10 +9,13 @@
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![Flask](https://img.shields.io/badge/Flask-3.1-000000?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com)
 [![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white)](https://getbootstrap.com)
+[![Vercel](https://img.shields.io/badge/Deployed-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://meta-shield-eight.vercel.app/)
 [![License](https://img.shields.io/badge/License-MIT-22C55E?style=for-the-badge)](LICENSE)
-[![Status](https://img.shields.io/badge/Status-Active-38BDF8?style=for-the-badge)]()
 
-> A production-ready cybersecurity web application for digital forensics professionals, privacy-conscious users, and software developers.
+### 🌐 [Live Demo → meta-shield-eight.vercel.app](https://meta-shield-eight.vercel.app/)
+
+> A production-ready cybersecurity web application for digital forensics professionals,  
+> privacy-conscious users, and software developers.
 
 </div>
 
@@ -20,13 +23,31 @@
 
 ## 📸 Screenshots
 
-| Landing Page | Dashboard |
-|:---:|:---:|
-| ![Landing](https://raw.githubusercontent.com/vgnanasekaran007-hub/MetaShield/main/docs/landing.png) | ![Dashboard](https://raw.githubusercontent.com/vgnanasekaran007-hub/MetaShield/main/docs/dashboard.png) |
+### 🏠 Landing Page
+> Glassmorphism hero with animated background, feature cards, and live statistics.
 
-| Compare | History & Analytics |
-|:---:|:---:|
-| ![Compare](https://raw.githubusercontent.com/vgnanasekaran007-hub/MetaShield/main/docs/compare.png) | ![History](https://raw.githubusercontent.com/vgnanasekaran007-hub/MetaShield/main/docs/history.png) |
+![Landing Page](docs/landing.png)
+
+---
+
+### 📊 Dashboard
+> Drag & drop upload zone, image preview with zoom/rotate, tabbed metadata viewer, GPS map, editor, and cleaner — all in one sidebar-driven layout.
+
+![Dashboard](docs/dashboard.png)
+
+---
+
+### 🔀 Metadata Compare
+> Upload two images and instantly see a color-coded diff — Added, Removed, Changed, Same — with search and filter controls.
+
+![Compare Page](docs/compare.png)
+
+---
+
+### 📜 History & Analytics
+> Every operation is logged in SQLite. Paginated history table with operations pie chart, daily uploads line chart, and file-format donut chart.
+
+![History & Analytics](docs/history.png)
 
 ---
 
@@ -34,9 +55,10 @@
 
 ### 🔍 Metadata Analysis
 - Extract **50+ EXIF fields** – camera model, lens, ISO, aperture, exposure, white balance, flash, focal length
-- **GPS location** extraction with Leaflet.js interactive map + Google Maps link
+- **GPS location** detection with Leaflet.js interactive map + Google Maps link
 - XMP, IPTC, ICC Profile, embedded thumbnail detection
 - Raw EXIF tag viewer with all unknown tags
+- Copy all metadata to clipboard in one click
 
 ### ✏️ Metadata Editor
 - Edit **Author, Copyright, Description, Software, Keywords, Title, Artist, Comment**
@@ -46,39 +68,39 @@
 ### 🧹 Metadata Cleaner
 - Selectively remove: **EXIF · GPS · IPTC · XMP · Comments · Thumbnail · ICC Profile**
 - Or **Remove All** metadata with one click
-- Configurable JPEG/WebP output quality
-- **Batch processing** — clean multiple images, download as ZIP
+- Configurable JPEG/WebP output quality slider
+- **Batch processing** — clean multiple images, download as single ZIP
 
 ### 🔀 Side-by-Side Compare
-- Upload two images and view a **color-coded diff**
+- Upload two images and view a **color-coded diff table**
 - Status labels: `CHANGED` · `ADDED` · `REMOVED` · `SAME`
-- Search and filter by diff status
+- Filter by status + search by field name
 
 ### 📊 Visual Tools
-- **RGB Histogram** — Chart.js visualization of channel distribution
+- **RGB Histogram** — Chart.js visualization of per-channel pixel distribution
 - **Color Palette** — Extract 8 dominant colors via median-cut; click any swatch to copy hex
-- **Image preview** with zoom (fullscreen), rotate, and download
+- **Image preview** with fullscreen zoom, rotate, and one-click download
 
 ### 📦 Export
-- **JSON** — complete metadata as pretty-printed JSON
-- **CSV** — two-column key/value spreadsheet
-- **TXT** — formatted text report
-- **PDF** — professionally styled report via ReportLab
+| Format | Description |
+|--------|-------------|
+| **JSON** | Complete metadata as pretty-printed JSON |
+| **CSV** | Two-column key/value spreadsheet |
+| **TXT** | Formatted human-readable text report |
+| **PDF** | Professionally styled report via ReportLab |
 
 ### 📜 History & Analytics
-- Every operation logged in **SQLite** (auto-created)
-- Operations breakdown (pie chart)
-- Daily uploads for last 14 days (line chart)
-- Format distribution (donut chart)
-- Search, filter, paginate history; delete individual records
+- Every operation logged in **SQLite** (auto-created, no setup needed)
+- Operations breakdown (pie chart), Daily uploads for last 14 days (line chart), Format distribution (donut chart)
+- Search, filter, paginate history; delete individual records or clear all
 
 ### 🎨 UI/UX
-- **Glassmorphism dark/light theme** with system preference respect
-- Animated hero page with floating cards and scan-line effect
-- Skeleton loading states, AOS scroll animations
+- **Glassmorphism dark/light theme** — persisted preference
+- Animated hero section with floating cards and scan-line effect
+- Skeleton loading states, AOS scroll animations, progress bars
 - Toast notifications, SweetAlert2 confirmation dialogs
-- Floating Action Button, ripple effects on buttons
-- Fully **responsive** — desktop, tablet, mobile
+- Floating Action Button, button ripple effects, micro-interactions
+- Fully **responsive** — desktop · tablet · mobile
 
 ---
 
@@ -113,7 +135,7 @@ python app.py
 http://127.0.0.1:5000
 ```
 
-> The SQLite database and upload/download folders are created automatically on first run.
+> The SQLite database (`database.db`) and upload/download folders are created automatically on first run.
 
 ---
 
@@ -138,11 +160,17 @@ MetaShield/
 │   ├── compare.html            ← Two-image metadata comparison
 │   └── history.html            ← History & analytics dashboard
 │
-└── static/
-    ├── css/style.css           ← Full custom CSS (glassmorphism, dark/light)
-    ├── js/app.js               ← Complete frontend JavaScript
-    ├── uploads/                ← Uploaded images (runtime, not committed)
-    └── downloads/              ← Processed outputs (runtime, not committed)
+├── static/
+│   ├── css/style.css           ← Full custom CSS (glassmorphism, dark/light)
+│   ├── js/app.js               ← Complete frontend JavaScript
+│   ├── uploads/                ← Uploaded images (runtime, not committed)
+│   └── downloads/              ← Processed outputs (runtime, not committed)
+│
+└── docs/                       ← Screenshots for README
+    ├── landing.png
+    ├── dashboard.png
+    ├── compare.png
+    └── history.png
 ```
 
 ---
@@ -165,15 +193,15 @@ MetaShield/
 | `GET`  | `/analytics` | Chart data for history page |
 | `GET`  | `/preview/<filename>` | Serve image preview |
 
-### Example: Upload & get metadata
+### Example – Upload & Analyze
 ```bash
-curl -X POST http://localhost:5000/upload \
+curl -X POST https://meta-shield-eight.vercel.app/upload \
   -F "file=@photo.jpg"
 ```
 
-### Example: Remove GPS only
+### Example – Remove GPS Only
 ```bash
-curl -X POST http://localhost:5000/remove \
+curl -X POST https://meta-shield-eight.vercel.app/remove \
   -H "Content-Type: application/json" \
   -d '{"filename": "abc123.jpg", "options": ["gps"], "quality": 95}'
 ```
@@ -202,7 +230,7 @@ curl -X POST http://localhost:5000/remove \
 | File validation | Extension allowlist: `jpg jpeg png tiff webp` |
 | Size limit | 20 MB maximum per file |
 | Filename sanitisation | `secure_filename()` + regex strip |
-| Path traversal prevention | All filenames sanitised before disk operations |
+| Path traversal prevention | All filenames sanitised before disk I/O |
 | Rate limiting | 30 uploads / hour per IP (in-memory) |
 | Local processing | No data ever sent to external servers |
 
@@ -211,25 +239,25 @@ curl -X POST http://localhost:5000/remove \
 ## 🧩 Tech Stack
 
 ### Backend
-| Library | Purpose |
-|---------|---------|
-| Flask 3.1 | Web framework |
-| Pillow 11 | Image I/O, EXIF, histogram, color palette |
-| piexif 1.1 | Structured EXIF read/write/edit |
-| exifread 3.0 | Extended raw tag extraction |
-| ReportLab 4.2 | PDF report generation |
-| SQLite (stdlib) | Upload history persistence |
+| Library | Version | Purpose |
+|---------|---------|---------|
+| Flask | 3.1 | Web framework & routing |
+| Pillow | 11.1 | Image I/O, EXIF, histogram, color palette |
+| piexif | 1.1.3 | Structured EXIF read / write / edit |
+| exifread | 3.0 | Extended raw tag extraction |
+| ReportLab | 4.2.5 | PDF report generation |
+| SQLite | stdlib | Upload history & analytics |
 
 ### Frontend
-| Library | Purpose |
-|---------|---------|
-| Bootstrap 5.3 | Responsive grid & components |
-| Chart.js 4.4 | Histogram, pie, line, donut charts |
-| Leaflet.js 1.9 | Interactive GPS map |
-| SweetAlert2 11 | Confirmation dialogs |
-| AOS 2.3 | Scroll animations |
-| Font Awesome 6 | Icons |
-| Poppins + JetBrains Mono | Typography |
+| Library | Version | Purpose |
+|---------|---------|---------|
+| Bootstrap | 5.3 | Responsive grid & components |
+| Chart.js | 4.4 | Histogram, pie, line, donut charts |
+| Leaflet.js | 1.9 | Interactive GPS map |
+| SweetAlert2 | 11 | Confirmation dialogs |
+| AOS | 2.3 | Scroll animations |
+| Font Awesome | 6.5 | Icon library |
+| Poppins / JetBrains Mono | — | Typography |
 
 ---
 
@@ -241,8 +269,8 @@ curl -X POST http://localhost:5000/remove \
 - [ ] Metadata integrity checker
 - [ ] Fake metadata detection
 - [ ] QR code metadata export
-- [ ] User authentication
-- [ ] Docker deployment
+- [ ] Docker deployment support
+- [ ] REST API documentation page
 
 ---
 
@@ -262,16 +290,19 @@ Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more informa
 
 ---
 
-## 👤 Author
+<div align="center">
 
-**vgnanasekaran007**  
-GitHub: [@vgnanasekaran007-hub](https://github.com/vgnanasekaran007-hub)
+## 👨‍💻 Developed by
+
+**Gnanasekaran V**
+
+[![GitHub](https://img.shields.io/badge/GitHub-vgnanasekaran007--hub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/vgnanasekaran007-hub)
+[![Gmail](https://img.shields.io/badge/Gmail-vgnanasekaran007%40gmail.com-EA4335?style=for-the-badge&logo=gmail&logoColor=white)](mailto:vgnanasekaran007@gmail.com)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-meta--shield--eight.vercel.app-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://meta-shield-eight.vercel.app/)
 
 ---
 
-<div align="center">
-
-Made with ❤️ using Flask · Pillow · Bootstrap 5
+Made with ❤️ using Flask · Pillow · Bootstrap 5 · Chart.js · Leaflet.js
 
 ⭐ **Star this repo** if you found it useful!
 
