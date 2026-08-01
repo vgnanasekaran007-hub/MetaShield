@@ -173,38 +173,7 @@ MetaShield/
     └── history.png
 ```
 
----
 
-## 🔌 API Reference
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/upload` | Upload one or more images; returns metadata |
-| `GET`  | `/metadata/<filename>` | Full metadata for an uploaded file |
-| `POST` | `/edit` | Edit EXIF fields; returns download link |
-| `POST` | `/remove` | Strip metadata (selective or all) |
-| `POST` | `/batch_remove` | Batch clean multiple files → ZIP |
-| `POST` | `/compare_meta` | Compare two images; returns diff |
-| `GET`  | `/api/history` | Paginated history (JSON) |
-| `GET`  | `/download/<filename>` | Download processed file |
-| `GET`  | `/download_zip/<filename>` | Download batch ZIP |
-| `POST` | `/delete/<id>` | Delete history record |
-| `GET`  | `/export/<filename>/<fmt>` | Export metadata as `json/csv/txt/pdf` |
-| `GET`  | `/analytics` | Chart data for history page |
-| `GET`  | `/preview/<filename>` | Serve image preview |
-
-### Example – Upload & Analyze
-```bash
-curl -X POST https://meta-shield-eight.vercel.app/upload \
-  -F "file=@photo.jpg"
-```
-
-### Example – Remove GPS Only
-```bash
-curl -X POST https://meta-shield-eight.vercel.app/remove \
-  -H "Content-Type: application/json" \
-  -d '{"filename": "abc123.jpg", "options": ["gps"], "quality": 95}'
-```
 
 ---
 
