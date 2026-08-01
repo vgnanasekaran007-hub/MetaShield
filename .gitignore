@@ -1,0 +1,74 @@
+# ── Python ────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+*.whl
+
+# ── Virtual environments ───────────────────────────────────────
+venv/
+env/
+.venv/
+.env/
+ENV/
+env.bak/
+venv.bak/
+
+# ── Environment / secrets ─────────────────────────────────────
+.env
+.env.*
+*.env
+.api
+*.api
+*.key
+*.secret
+secrets.py
+config_local.py
+
+# ── Source maps / compiled ────────────────────────────────────
+*.src
+*.map
+*.min.js.map
+
+# ── Database ──────────────────────────────────────────────────
+database.db
+*.db
+*.sqlite
+*.sqlite3
+
+# ── Uploaded / processed images (runtime data) ───────────────
+static/uploads/*
+static/downloads/*
+!static/uploads/.gitkeep
+!static/downloads/.gitkeep
+
+# ── IDE / Editor ──────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ── Logs ─────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── Coverage / testing ────────────────────────────────────────
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+*.cover
+
+# ── Distribution ─────────────────────────────────────────────
+*.tar.gz
+*.zip

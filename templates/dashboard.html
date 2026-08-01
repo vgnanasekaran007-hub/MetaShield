@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard – MetaShield</title>
+  <meta name="description" content="MetaShield Dashboard: upload, analyze, edit and clean image metadata." />
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="/static/css/style.css" />
+  <style>
+    .leaflet-container { background: var(--bg-surface) !important; }
+  </style>
+</head>
+<body>
+
+<!-- Page Loader -->
+<div id="page-loader">
+  <div class="loader-logo"><i class="fas fa-shield-halved"></i></div>
+  <div style="font-size:.85rem;color:var(--text-muted);margin-bottom:.75rem;font-weight:600;letter-spacing:.05em;">METASHIELD</div>
+  <div class="loader-bar"><div class="loader-bar-inner"></div></div>
+</div>
+
+<!-- ── Top Navbar ─────────────────────────────────────────── -->
+<nav class="ms-navbar">
+  <button class="sidebar-toggle me-2" id="sidebarToggle" title="Toggle sidebar">
+    <i class="fas fa-bars"></i>
+  </button>
+  <a href="/" class="nav-logo text-decoration-none">
+    <div class="logo-icon"><i class="fas fa-shield-halved"></i></div>
+    <span class="brand">Meta<span class="dot">Shield</span></span>
+  </a>
+  <div class="ms-auto d-flex align-items-center gap-3">
+    <span class="info-chip d-none d-md-inline-flex"><i class="fas fa-circle" style="color:var(--success);font-size:.5rem;"></i> Online</span>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme" aria-label="Toggle theme"></button>
+    <button class="btn-ghost py-1 px-3 d-none d-md-inline-flex" id="keyboardShortcutsBtn" title="Keyboard shortcuts">
+      <i class="fas fa-keyboard"></i>
+    </button>
+  </div>
+</nav>
+
+<!-- ── Sidebar ────────────────────────────────────────────── -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-section-title">Navigation</div>
+
+  <div class="nav-item-custom active" id="nav-upload" onclick="switchSection('upload')">
+    <i class="fas fa-upload"></i> Upload
+  </div>
+  <div class="nav-item-custom" id="nav-metadata" onclick="switchSection('metadata')">
+    <i class="fas fa-tags"></i> Metadata
+  </div>
+  <div class="nav-item-custom" id="nav-editor" onclick="switchSection('editor')">
+    <i class="fas fa-pen-to-square"></i> Edit Metadata
+  </div>
+  <div class="nav-item-custom" id="nav-cleaner" onclick="switchSection('cleaner')">
+    <i class="fas fa-eraser"></i> Clean Metadata
+  </div>
+  <div class="nav-item-custom" onclick="window.location='/compare'">
+    <i class="fas fa-code-compare"></i> Compare
+  </div>
+  <div class="nav-item-custom" onclick="window.location='/history'">
+    <i class="fas fa-clock-rotate-left"></i> History
+  </div>
+
+  <div class="sidebar-section-title mt-3">Tools</div>
+
+  <div class="nav-item-custom" id="nav-histogram" onclick="switchSection('histogram')">
+    <i class="fas fa-chart-bar"></i> Histogram
+  </div>
+  <div class="nav-item-custom" id="nav-palette" onclick="switchSection('palette')">
+    <i class="fas fa-palette"></i> Color Palette
+  </div>
+  <div class="nav-item-custom" id="nav-settings" onclick="switchSection('settings')">
+    <i class="fas fa-gear"></i> Settings
+  </div>
+
+  <div class="mt-auto pt-4">
+    <div style="font-size:.72rem;color:var(--text-muted);padding:.5rem;text-align:center;">
+      MetaShield v1.0.0<br/>
+      <span style="color:var(--primary);">●</span> All processing local
+    </div>
+  </div>
+</aside>
+
+<!-- ── Main Content ───────────────────────────────────────── -->
+<main class="main-content" id="mainContent">
+
+  <!-- ===================== UPLOAD SECTION ===================== -->
+  <section id="section-upload">
+    <div class="dash-header">
+      <div>
+        <div class="dash-title"><i class="fas fa-upload text-primary"></i> Upload Images</div>
+        <div class="dash-subtitle">Drag & drop or click to browse. Max 20 MB · JPG · PNG · TIFF · WEBP</div>
+      </div>
+      <div class="d-flex gap-2">
+        <button class="btn-ghost py-2 px-3" id="batchModeBtn" onclick="toggleBatchMode()">
+          <i class="fas fa-layer-group me-1"></i> Batch Mode
+        </button>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <!-- Upload card -->
+      <div class="col-lg-6">
+        <div class="glass-card p-4 h-100">
+          <div class="section-title"><i class="fas fa-cloud-upload-alt"></i> Select File</div>
+
+          <div class="upload-zone" id="uploadZone">
+            <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.tiff,.tif,.webp" multiple hidden />
+            <div class="upload-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+            <div class="upload-title">Drag &amp; Drop Your Images Here</div>
+            <div class="upload-sub">or <span style="color:var(--primary);font-weight:600;cursor:pointer;" onclick="document.getElementById('fileInput').click()">browse files</span></div>
+            <div class="mt-3 d-flex flex-wrap gap-2 justify-content-center">
+              <span class="format-badge">JPG</span>
+              <span class="format-badge">PNG</span>
+              <span class="format-badge">TIFF</span>
+              <span class="format-badge">WEBP</span>
+            </div>
+          </div>
+
+          <!-- Batch file list -->
+          <div id="batchFileList" class="mt-3" style="display:none;"></div>
+
+          <!-- Upload progress -->
+          <div id="uploadProgress" class="mt-3" style="display:none;">
+            <div style="font-size:.82rem;color:var(--text-secondary);margin-bottom:.4rem;">
+              <i class="fas fa-spinner fa-spin me-1"></i> Uploading &amp; analyzing…
+            </div>
+            <div class="progress-custom"><div class="progress-bar-custom" id="uploadProgressBar" style="width:0%"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Image preview card -->
+      <div class="col-lg-6">
+        <div class="glass-card p-4 h-100">
+          <div class="section-title"><i class="fas fa-eye"></i> Image Preview</div>
+
+          <!-- Skeleton -->
+          <div id="previewSkeleton">
+            <div class="skeleton skeleton-img mb-3"></div>
+            <div class="skeleton skeleton-text w-75"></div>
+            <div class="skeleton skeleton-text w-50"></div>
+          </div>
+
+          <!-- Actual preview -->
+          <div id="previewContent" style="display:none;">
+            <div class="img-preview-card mb-3" id="previewCard">
+              <img id="previewImg" src="" alt="Preview" />
+              <div class="img-preview-actions">
+                <button class="img-action-btn" onclick="zoomImage()" title="Fullscreen"><i class="fas fa-expand"></i></button>
+                <button class="img-action-btn" onclick="rotatePreview()" title="Rotate"><i class="fas fa-rotate-right"></i></button>
+                <button class="img-action-btn" onclick="downloadOriginal()" title="Download"><i class="fas fa-download"></i></button>
+              </div>
+            </div>
+            <div id="fileInfoChips" class="d-flex flex-wrap gap-2"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick stats row -->
+    <div class="row g-3 mt-1" id="quickStats" style="display:none !important;">
+      <div class="col-6 col-md-3">
+        <div class="glass-card p-3 text-center">
+          <div class="stat-number" style="font-size:1.4rem;" id="statFormat">–</div>
+          <div class="stat-label">Format</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="glass-card p-3 text-center">
+          <div class="stat-number" style="font-size:1.4rem;" id="statDims">–</div>
+          <div class="stat-label">Dimensions</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="glass-card p-3 text-center">
+          <div class="stat-number" style="font-size:1.4rem;" id="statSize">–</div>
+          <div class="stat-label">File Size</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="glass-card p-3 text-center">
+          <div class="stat-number" style="font-size:1.4rem;" id="statGPS">–</div>
+          <div class="stat-label">GPS Data</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== METADATA SECTION ===================== -->
+  <section id="section-metadata" style="display:none;">
+    <div class="dash-header">
+      <div>
+        <div class="dash-title"><i class="fas fa-tags text-primary"></i> Metadata Viewer</div>
+        <div class="dash-subtitle" id="metaFilename">No file loaded</div>
+      </div>
+      <div class="d-flex gap-2 flex-wrap">
+        <button class="btn-ghost py-2 px-3" onclick="copyAllMeta()"><i class="fas fa-copy me-1"></i> Copy All</button>
+        <div class="dropdown">
+          <button class="btn-primary-custom py-2 px-3 dropdown-toggle" data-bs-toggle="dropdown">
+            <span><i class="fas fa-file-export me-1"></i> Export</span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end" style="background:var(--bg-card);border:1px solid var(--border);">
+            <li><a class="dropdown-item" href="#" onclick="exportMeta('json')" style="color:var(--text-primary);"><i class="fab fa-js me-2" style="color:#F59E0B;"></i>JSON</a></li>
+            <li><a class="dropdown-item" href="#" onclick="exportMeta('csv')"  style="color:var(--text-primary);"><i class="fas fa-table me-2" style="color:var(--success);"></i>CSV</a></li>
+            <li><a class="dropdown-item" href="#" onclick="exportMeta('txt')"  style="color:var(--text-primary);"><i class="fas fa-file-lines me-2" style="color:var(--accent);"></i>TXT</a></li>
+            <li><a class="dropdown-item" href="#" onclick="exportMeta('pdf')"  style="color:var(--text-primary);"><i class="fas fa-file-pdf me-2" style="color:var(--danger);"></i>PDF Report</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- No file placeholder -->
+    <div id="metaPlaceholder" class="glass-card p-5 text-center">
+      <div style="font-size:3rem;margin-bottom:1rem;opacity:.3;"><i class="fas fa-image"></i></div>
+      <div style="color:var(--text-muted);font-size:.9rem;">Upload an image first to view its metadata</div>
+      <button class="btn-primary-custom mt-3 py-2 px-4" onclick="switchSection('upload')">
+        <span><i class="fas fa-upload me-1"></i> Upload Image</span>
+      </button>
+    </div>
+
+    <!-- Actual metadata content -->
+    <div id="metaContent" style="display:none;">
+      <!-- Search -->
+      <div class="meta-search-bar mb-3">
+        <i class="fas fa-magnifying-glass"></i>
+        <input type="text" class="form-control-custom" id="metaSearch" placeholder="Search metadata fields…" oninput="filterMeta(this.value)" />
+      </div>
+
+      <!-- Tabs -->
+      <div class="tab-nav" id="metaTabs">
+        <button class="tab-btn active" onclick="switchMetaTab('file')">File Info</button>
+        <button class="tab-btn" onclick="switchMetaTab('exif')">EXIF</button>
+        <button class="tab-btn" onclick="switchMetaTab('gps')">GPS</button>
+        <button class="tab-btn" onclick="switchMetaTab('raw')">Raw</button>
+      </div>
+
+      <!-- File info tab -->
+      <div class="tab-pane active glass-card p-4" id="tab-file">
+        <div class="section-title"><i class="fas fa-info-circle"></i> File Information</div>
+        <div id="fileInfoRows"></div>
+        <div class="section-title mt-4"><i class="fas fa-image"></i> Image Properties</div>
+        <div id="imageInfoRows"></div>
+      </div>
+
+      <!-- EXIF tab -->
+      <div class="tab-pane glass-card p-4" id="tab-exif">
+        <div class="section-title"><i class="fas fa-camera"></i> EXIF Metadata</div>
+        <div id="exifRows"></div>
+        <div id="noExifMsg" style="display:none;" class="text-center py-4">
+          <i class="fas fa-circle-info" style="font-size:2rem;color:var(--text-muted);margin-bottom:.75rem;display:block;"></i>
+          <span style="color:var(--text-muted);font-size:.9rem;">No EXIF data found in this image.</span>
+        </div>
+      </div>
+
+      <!-- GPS tab -->
+      <div class="tab-pane glass-card p-4" id="tab-gps">
+        <div class="section-title"><i class="fas fa-map-location-dot"></i> GPS Information</div>
+        <div id="gpsRows"></div>
+        <div id="gpsMap" style="display:none;">
+          <div id="leafletMap"></div>
+          <a id="googleMapsLink" href="#" target="_blank" class="btn-ghost mt-2 py-1 px-3" style="display:inline-flex;font-size:.8rem;">
+            <i class="fas fa-external-link-alt me-1"></i> Open in Google Maps
+          </a>
+        </div>
+        <div id="noGpsMsg" class="text-center py-4">
+          <i class="fas fa-map-pin" style="font-size:2rem;color:var(--text-muted);margin-bottom:.75rem;display:block;"></i>
+          <span style="color:var(--text-muted);font-size:.9rem;">No GPS data found in this image.</span>
+        </div>
+      </div>
+
+      <!-- Raw EXIF tab -->
+      <div class="tab-pane glass-card p-4" id="tab-raw">
+        <div class="section-title"><i class="fas fa-code"></i> Raw EXIF Tags</div>
+        <div class="table-responsive">
+          <table class="raw-table">
+            <thead><tr><th>Tag</th><th>Value</th></tr></thead>
+            <tbody id="rawExifBody"></tbody>
+          </table>
+        </div>
+        <div id="noRawMsg" style="display:none;" class="text-center py-4">
+          <span style="color:var(--text-muted);font-size:.9rem;">No raw EXIF tags available.</span>
+        </div>
+      </div>
+
+      <!-- ICC / Thumbnail -->
+      <div class="row g-4 mt-1">
+        <div class="col-md-6">
+          <div class="glass-card p-4">
+            <div class="section-title"><i class="fas fa-swatchbook"></i> ICC Profile</div>
+            <div id="iccInfo"></div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="glass-card p-4">
+            <div class="section-title"><i class="fas fa-image"></i> Embedded Thumbnail</div>
+            <div id="thumbnailContent">
+              <p style="font-size:.85rem;color:var(--text-muted);">No embedded thumbnail.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== EDITOR SECTION ===================== -->
+  <section id="section-editor" style="display:none;">
+    <div class="dash-header">
+      <div>
+        <div class="dash-title"><i class="fas fa-pen-to-square text-primary"></i> Metadata Editor</div>
+        <div class="dash-subtitle">Edit EXIF fields and save changes to the image.</div>
+      </div>
+    </div>
+
+    <div id="editorPlaceholder" class="glass-card p-5 text-center">
+      <div style="font-size:3rem;margin-bottom:1rem;opacity:.3;"><i class="fas fa-pen-to-square"></i></div>
+      <div style="color:var(--text-muted);font-size:.9rem;">Upload an image first to edit its metadata</div>
+      <button class="btn-primary-custom mt-3 py-2 px-4" onclick="switchSection('upload')">
+        <span><i class="fas fa-upload me-1"></i> Upload Image</span>
+      </button>
+    </div>
+
+    <div id="editorContent" style="display:none;">
+      <div class="row g-4">
+        <div class="col-lg-8">
+          <div class="glass-card p-4">
+            <div class="section-title"><i class="fas fa-list"></i> Editable Fields</div>
+
+            <div class="row g-3" id="editorFields">
+              <!-- Filled by JS using EDITABLE_FIELDS from backend -->
+            </div>
+
+            <div class="d-flex gap-3 mt-4 flex-wrap">
+              <button class="btn-primary-custom ripple py-2 px-4" onclick="saveMetadata()">
+                <span><i class="fas fa-floppy-disk me-1"></i> Save &amp; Download</span>
+              </button>
+              <button class="btn-ghost py-2 px-3" onclick="clearEditorFields()">
+                <i class="fas fa-rotate-left me-1"></i> Reset Fields
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="glass-card p-4">
+            <div class="section-title"><i class="fas fa-eye"></i> Preview</div>
+            <div class="img-preview-card mb-3" style="height:200px;">
+              <img id="editorPreviewImg" src="" alt="Preview" style="object-fit:contain;" />
+            </div>
+            <div id="editorCurrentMeta" style="font-size:.8rem;"></div>
+          </div>
+          <div class="glass-card p-4 mt-3">
+            <div class="section-title"><i class="fas fa-circle-info"></i> Tip</div>
+            <p style="font-size:.82rem;color:var(--text-secondary);line-height:1.6;">
+              Only fields with values will be written. Leave a field empty to skip it.
+              Changes are saved to a new file — your original is untouched.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== CLEANER SECTION ===================== -->
+  <section id="section-cleaner" style="display:none;">
+    <div class="dash-header">
+      <div>
+        <div class="dash-title"><i class="fas fa-eraser text-primary"></i> Metadata Cleaner</div>
+        <div class="dash-subtitle">Select metadata categories to remove, then download the clean image.</div>
+      </div>
+    </div>
+
+    <div id="cleanerPlaceholder" class="glass-card p-5 text-center">
+      <div style="font-size:3rem;margin-bottom:1rem;opacity:.3;"><i class="fas fa-eraser"></i></div>
+      <div style="color:var(--text-muted);font-size:.9rem;">Upload an image first to clean its metadata</div>
+      <button class="btn-primary-custom mt-3 py-2 px-4" onclick="switchSection('upload')">
+        <span><i class="fas fa-upload me-1"></i> Upload Image</span>
+      </button>
+    </div>
+
+    <div id="cleanerContent" style="display:none;">
+      <div class="row g-4">
+        <div class="col-lg-7">
+          <div class="glass-card p-4">
+            <div class="section-title"><i class="fas fa-list-check"></i> Select What to Remove</div>
+
+            <div id="cleanerOptions">
+              <div class="cleaner-option" onclick="toggleCleanOpt(this,'exif')">
+                <input type="checkbox" id="opt-exif" data-key="exif" checked />
+                <div class="cleaner-option-info">
+                  <div class="cleaner-option-name"><i class="fas fa-camera me-2" style="color:var(--primary);"></i>EXIF Metadata</div>
+                  <div class="cleaner-option-desc">Camera model, settings, focal length, ISO, white balance…</div>
+                </div>
+              </div>
+              <div class="cleaner-option" onclick="toggleCleanOpt(this,'gps')">
+                <input type="checkbox" id="opt-gps" data-key="gps" checked />
+                <div class="cleaner-option-info">
+                  <div class="cleaner-option-name"><i class="fas fa-map-marker-alt me-2" style="color:var(--danger);"></i>GPS Location</div>
+                  <div class="cleaner-option-desc">Latitude, longitude, altitude, GPS timestamps</div>
+                </div>
+              </div>
+              <div class="cleaner-option" onclick="toggleCleanOpt(this,'thumbnail')">
+                <input type="checkbox" id="opt-thumbnail" data-key="thumbnail" checked />
+                <div class="cleaner-option-info">
+                  <div class="cleaner-option-name"><i class="fas fa-image me-2" style="color:var(--warning);"></i>Embedded Thumbnail</div>
+                  <div class="cleaner-option-desc">Tiny embedded preview often contains original unedited image info</div>
+                </div>
+              </div>
+              <div class="cleaner-option" onclick="toggleCleanOpt(this,'icc_profile')">
+                <input type="checkbox" id="opt-icc_profile" data-key="icc_profile" />
+                <div class="cleaner-option-info">
+                  <div class="cleaner-option-name"><i class="fas fa-swatchbook me-2" style="color:var(--info);"></i>ICC Color Profile</div>
+                  <div class="cleaner-option-desc">Color space information embedded in the file</div>
+                </div>
+              </div>
+              <div class="cleaner-option" onclick="toggleCleanOpt(this,'comments')">
+                <input type="checkbox" id="opt-comments" data-key="comments" />
+                <div class="cleaner-option-info">
+                  <div class="cleaner-option-name"><i class="fas fa-comment me-2" style="color:var(--success);"></i>Comments</div>
+                  <div class="cleaner-option-desc">Embedded text comments in the image file</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="d-flex gap-3 flex-wrap mt-4 pt-3" style="border-top:1px solid var(--border);">
+              <button class="btn-primary-custom ripple py-2 px-4" onclick="checkAllClean(true)">
+                <span><i class="fas fa-check-double me-1"></i> Select All</span>
+              </button>
+              <button class="btn-ghost py-2 px-3" onclick="checkAllClean(false)">
+                <i class="fas fa-square me-1"></i> Deselect All
+              </button>
+            </div>
+
+            <div class="mt-4">
+              <label class="form-label-custom">Output Quality (JPEG/WEBP)</label>
+              <div class="d-flex align-items-center gap-3">
+                <input type="range" class="form-range" id="qualitySlider" min="60" max="100" value="95" oninput="document.getElementById('qualityVal').textContent=this.value+'%'" style="flex:1;accent-color:var(--primary);" />
+                <span id="qualityVal" style="font-family:var(--font-mono);font-weight:700;min-width:40px;color:var(--accent);">95%</span>
+              </div>
+            </div>
+
+            <div class="d-flex gap-3 flex-wrap mt-4">
+              <button class="btn-danger-custom ripple py-2 px-4" onclick="cleanMetadata()">
+                <i class="fas fa-eraser me-1"></i> Clean &amp; Download
+              </button>
+              <button class="btn-ghost py-2 px-3" id="batchCleanBtn" onclick="batchClean()">
+                <i class="fas fa-layer-group me-1"></i> Batch Clean (ZIP)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-5">
+          <!-- Preview -->
+          <div class="glass-card p-4 mb-4">
+            <div class="section-title"><i class="fas fa-eye"></i> Image</div>
+            <div class="img-preview-card" style="height:180px;">
+              <img id="cleanerPreviewImg" src="" alt="Preview" style="object-fit:contain;" />
+            </div>
+          </div>
+
+          <!-- Results -->
+          <div class="glass-card p-4" id="cleanerResults" style="display:none;">
+            <div class="section-title"><i class="fas fa-chart-bar"></i> Clean Results</div>
+            <div id="cleanerResultContent"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== HISTOGRAM SECTION ===================== -->
+  <section id="section-histogram" style="display:none;">
+    <div class="dash-header">
+      <div>
+        <div class="dash-title"><i class="fas fa-chart-bar text-primary"></i> Image Histogram</div>
+        <div class="dash-subtitle">RGB channel distribution of the uploaded image.</div>
+      </div>
+    </div>
+    <div id="histogramPlaceholder" class="glass-card p-5 text-center">
+      <div style="font-size:3rem;margin-bottom:1rem;opacity:.3;"><i class="fas fa-chart-bar"></i></div>
+      <div style="color:var(--text-muted);font-size:.9rem;">Upload an image to view its histogram</div>
+      <button class="btn-primary-custom mt-3 py-2 px-4" onclick="switchSection('upload')">
+        <span><i class="fas fa-upload me-1"></i> Upload Image</span>
+      </button>
+    </div>
+    <div id="histogramContent" style="display:none;">
+      <div class="glass-card p-4">
+        <div class="section-title"><i class="fas fa-chart-area"></i> RGB Channels</div>
+        <div class="chart-container-lg">
+          <canvas id="histogramChart"></canvas>
+        </div>
+        <div class="d-flex justify-content-center gap-4 mt-3">
+          <span style="font-size:.82rem;"><span style="color:#EF4444;font-weight:700;">●</span> Red</span>
+          <span style="font-size:.82rem;"><span style="color:#22C55E;font-weight:700;">●</span> Green</span>
+          <span style="font-size:.82rem;"><span style="color:#38BDF8;font-weight:700;">●</span> Blue</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PALETTE SECTION ===================== -->
+  <section id="section-palette" style="display:none;">
+    <div class="dash-header">
+      <div>
+        <div class="dash-title"><i class="fas fa-palette text-primary"></i> Color Palette</div>
+        <div class="dash-subtitle">Dominant colors extracted from the image. Click a swatch to copy hex.</div>
+      </div>
+    </div>
+    <div id="palettePlaceholder" class="glass-card p-5 text-center">
+      <div style="font-size:3rem;margin-bottom:1rem;opacity:.3;"><i class="fas fa-palette"></i></div>
+      <div style="color:var(--text-muted);font-size:.9rem;">Upload an image to extract its color palette</div>
+      <button class="btn-primary-custom mt-3 py-2 px-4" onclick="switchSection('upload')">
+        <span><i class="fas fa-upload me-1"></i> Upload Image</span>
+      </button>
+    </div>
+    <div id="paletteContent" style="display:none;">
+      <div class="glass-card p-4">
+        <div class="section-title"><i class="fas fa-palette"></i> Dominant Colors</div>
+        <div class="palette-grid" id="paletteGrid" style="gap:1rem;"></div>
+        <div class="row g-3 mt-3" id="paletteDetails"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== SETTINGS SECTION ===================== -->
+  <section id="section-settings" style="display:none;">
+    <div class="dash-header">
+      <div>
+        <div class="dash-title"><i class="fas fa-gear text-primary"></i> Settings</div>
+        <div class="dash-subtitle">Customize your MetaShield experience.</div>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-lg-7">
+        <div class="glass-card p-4">
+          <div class="section-title"><i class="fas fa-sliders"></i> Preferences</div>
+
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Theme</div>
+              <div class="settings-desc">Choose your preferred appearance</div>
+            </div>
+            <div class="d-flex gap-2">
+              <button class="btn-ghost py-1 px-3" style="font-size:.82rem;" onclick="setTheme('dark')"><i class="fas fa-moon me-1"></i>Dark</button>
+              <button class="btn-ghost py-1 px-3" style="font-size:.82rem;" onclick="setTheme('light')"><i class="fas fa-sun me-1"></i>Light</button>
+            </div>
+          </div>
+
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Default Export Format</div>
+              <div class="settings-desc">Format used when exporting metadata</div>
+            </div>
+            <select class="form-control-custom" id="defaultExportFmt" style="width:auto;" onchange="saveSetting('exportFmt',this.value)">
+              <option value="json">JSON</option>
+              <option value="csv">CSV</option>
+              <option value="txt">TXT</option>
+              <option value="pdf">PDF</option>
+            </select>
+          </div>
+
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Default JPEG Quality</div>
+              <div class="settings-desc">Compression quality for cleaned images</div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <input type="range" min="60" max="100" value="95" id="defaultQuality" style="accent-color:var(--primary);width:120px;" oninput="document.getElementById('defQualVal').textContent=this.value+'%';saveSetting('quality',this.value)" />
+              <span id="defQualVal" style="font-family:var(--font-mono);font-size:.85rem;color:var(--accent);">95%</span>
+            </div>
+          </div>
+
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Show GPS on Map</div>
+              <div class="settings-desc">Automatically display Leaflet map when GPS found</div>
+            </div>
+            <button class="theme-toggle" id="gpsMapToggle" onclick="toggleSetting('showGpsMap',this)"></button>
+          </div>
+
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Auto-switch to Metadata Tab</div>
+              <div class="settings-desc">Jump to metadata view after upload</div>
+            </div>
+            <button class="theme-toggle" id="autoSwitchToggle" onclick="toggleSetting('autoSwitch',this)"></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-5">
+        <div class="glass-card p-4">
+          <div class="section-title"><i class="fas fa-keyboard"></i> Keyboard Shortcuts</div>
+          <div style="display:flex;flex-direction:column;gap:.6rem;font-size:.85rem;">
+            <div class="d-flex justify-content-between align-items-center"><span>Upload Image</span><span><kbd class="kbd">Ctrl</kbd> + <kbd class="kbd">U</kbd></span></div>
+            <div class="d-flex justify-content-between align-items-center"><span>View Metadata</span><span><kbd class="kbd">Ctrl</kbd> + <kbd class="kbd">M</kbd></span></div>
+            <div class="d-flex justify-content-between align-items-center"><span>Edit Metadata</span><span><kbd class="kbd">Ctrl</kbd> + <kbd class="kbd">E</kbd></span></div>
+            <div class="d-flex justify-content-between align-items-center"><span>Clean Metadata</span><span><kbd class="kbd">Ctrl</kbd> + <kbd class="kbd">D</kbd></span></div>
+            <div class="d-flex justify-content-between align-items-center"><span>Toggle Sidebar</span><span><kbd class="kbd">Ctrl</kbd> + <kbd class="kbd">B</kbd></span></div>
+            <div class="d-flex justify-content-between align-items-center"><span>Toggle Theme</span><span><kbd class="kbd">Ctrl</kbd> + <kbd class="kbd">T</kbd></span></div>
+            <div class="d-flex justify-content-between align-items-center"><span>Fullscreen Preview</span><span><kbd class="kbd">F</kbd></span></div>
+          </div>
+        </div>
+
+        <div class="glass-card p-4 mt-3">
+          <div class="section-title"><i class="fas fa-info-circle"></i> About</div>
+          <div style="font-size:.83rem;color:var(--text-secondary);line-height:1.7;">
+            <strong style="color:var(--text-primary);">MetaShield v1.0.0</strong><br/>
+            Image Metadata Analyzer &amp; Editor<br/>
+            Built with Flask · Pillow · piexif<br/>
+            Chart.js · Leaflet.js · Bootstrap 5<br/><br/>
+            <span style="color:var(--success);"><i class="fas fa-lock me-1"></i>All processing happens locally.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main><!-- /.main-content -->
+
+<!-- ── Fullscreen Image Overlay ───────────────────────────── -->
+<div class="img-fullscreen-overlay" id="fullscreenOverlay" onclick="closeFullscreen()">
+  <img id="fullscreenImg" src="" alt="Fullscreen" />
+</div>
+
+<!-- ── Toast container ───────────────────────────────────── -->
+<div class="toast-container-custom" id="toastContainer"></div>
+
+<!-- ── FAB ───────────────────────────────────────────────── -->
+<button class="fab" onclick="switchSection('upload')" title="New Upload"><i class="fas fa-plus"></i></button>
+
+<!-- Leaflet -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.10.5/dist/sweetalert2.all.min.js"></script>
+<!-- Bootstrap -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- App JS -->
+<script>
+  // Inject editable fields from Flask
+  const EDITABLE_FIELDS = {{ editable_fields | tojson }};
+</script>
+<script src="/static/js/app.js"></script>
+</body>
+</html>

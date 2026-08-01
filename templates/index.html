@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MetaShield – Image Metadata Analyzer & Editor</title>
+  <meta name="description" content="Analyze, Edit, Compare and Remove Metadata from Images securely. A professional cybersecurity tool for digital forensics." />
+
+  <!-- Bootstrap 5 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <!-- AOS Animation -->
+  <link rel="stylesheet" href="https://unpkg.com/aos@2.3.4/dist/aos.css" />
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="/static/css/style.css" />
+
+  <style>
+    .hero-illustration {
+      width: 100%;
+      max-width: 500px;
+      margin: 0 auto;
+      position: relative;
+    }
+    .illustration-main {
+      background: linear-gradient(135deg, rgba(37,99,235,.12), rgba(56,189,248,.08));
+      border: 1px solid rgba(37,99,235,.2);
+      border-radius: 24px;
+      padding: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .illustration-main::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: conic-gradient(from 0deg at 50% 50%, transparent 340deg, rgba(37,99,235,.15) 360deg);
+      animation: rotate 8s linear infinite;
+    }
+    @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .illustration-inner {
+      position: relative;
+      z-index: 1;
+    }
+    .mock-image-frame {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 1rem;
+      aspect-ratio: 16/9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .mock-image-frame .scan-line {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      animation: scanLine 2.5s ease-in-out infinite;
+    }
+    @keyframes scanLine {
+      0%   { top: 0%; opacity: 1; }
+      90%  { top: 100%; opacity: 1; }
+      100% { top: 100%; opacity: 0; }
+    }
+    .mock-image-frame i {
+      font-size: 3rem;
+      color: var(--primary);
+      opacity: 0.5;
+    }
+    .mock-meta-rows { display: flex; flex-direction: column; gap: .4rem; }
+    .mock-meta-row {
+      display: flex; gap: .75rem; align-items: center;
+    }
+    .mock-meta-key {
+      background: rgba(37,99,235,.15);
+      border-radius: 4px;
+      height: 10px;
+      width: 80px;
+      flex-shrink: 0;
+    }
+    .mock-meta-val {
+      background: var(--border);
+      border-radius: 4px;
+      height: 10px;
+      flex: 1;
+    }
+    .mock-meta-val.short { flex: 0 0 60px; }
+    .mock-meta-val.med   { flex: 0 0 120px; }
+    .mock-tag-row {
+      display: flex; gap: .4rem; flex-wrap: wrap; margin-top: .75rem;
+    }
+    .mock-tag {
+      background: rgba(56,189,248,.12);
+      border: 1px solid rgba(56,189,248,.2);
+      border-radius: 4px;
+      padding: .15rem .5rem;
+      font-size: .68rem;
+      color: var(--accent);
+      font-family: var(--font-mono);
+      font-weight: 600;
+    }
+    .floating-shield {
+      position: absolute;
+      top: -20px;
+      right: -20px;
+      width: 70px;
+      height: 70px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      color: white;
+      box-shadow: 0 0 30px rgba(37,99,235,.5);
+      animation: floatCard 5s ease-in-out infinite;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Page Loader -->
+<div id="page-loader">
+  <div class="loader-logo"><i class="fas fa-shield-halved"></i></div>
+  <div style="font-size:.85rem;color:var(--text-muted);margin-bottom:.75rem;font-weight:600;letter-spacing:.05em;">METASHIELD</div>
+  <div class="loader-bar"><div class="loader-bar-inner"></div></div>
+</div>
+
+<!-- Animated background -->
+<div class="hero-bg">
+  <div class="grid-overlay"></div>
+
+  <!-- ── Navbar ──────────────────────────────────────────── -->
+  <nav class="ms-navbar">
+    <a href="/" class="nav-logo text-decoration-none">
+      <div class="logo-icon"><i class="fas fa-shield-halved"></i></div>
+      <span class="brand">Meta<span class="dot">Shield</span></span>
+    </a>
+
+    <div class="nav-links ms-auto d-flex align-items-center gap-2">
+      <a href="#features" class="nav-link-custom d-none d-md-block">Features</a>
+      <a href="#formats"  class="nav-link-custom d-none d-md-block">Formats</a>
+      <a href="/history"  class="nav-link-custom d-none d-md-block">History</a>
+      <button class="theme-toggle me-2" id="themeToggle" title="Toggle theme" aria-label="Toggle dark/light theme"></button>
+      <a href="/dashboard"><button class="btn-nav ripple"><span><i class="fas fa-rocket me-1"></i> Launch App</span></button></a>
+    </div>
+  </nav>
+
+  <!-- ── Hero Section ────────────────────────────────────── -->
+  <section class="hero-section" id="home">
+    <div class="container">
+      <div class="row align-items-center g-5">
+
+        <!-- Left column -->
+        <div class="col-lg-6" data-aos="fade-right" data-aos-duration="700">
+          <div class="hero-eyebrow">
+            <span class="eyebrow-dot"></span>
+            Digital Forensics & Privacy Tool
+          </div>
+
+          <h1 class="hero-title">
+            Image <span class="grad">Metadata</span><br/>
+            Analyzer &amp; Editor
+          </h1>
+
+          <p class="hero-sub">
+            Analyze, Edit, Compare and Remove hidden metadata from images
+            securely. Protect your privacy and forensically inspect any photo
+            with a professional-grade tool.
+          </p>
+
+          <!-- Supported formats -->
+          <div class="hero-badges" id="formats">
+            <span class="format-badge">JPG</span>
+            <span class="format-badge">JPEG</span>
+            <span class="format-badge">PNG</span>
+            <span class="format-badge">TIFF</span>
+            <span class="format-badge">WEBP</span>
+          </div>
+
+          <!-- CTA Buttons -->
+          <div class="hero-actions mb-4">
+            <a href="/dashboard">
+              <button class="btn-hero-primary ripple">
+                <i class="fas fa-upload"></i>
+                Upload Image
+              </button>
+            </a>
+            <a href="#features">
+              <button class="btn-hero-secondary">
+                <i class="fas fa-play-circle"></i>
+                Learn More
+              </button>
+            </a>
+          </div>
+
+          <!-- Trust indicators -->
+          <div class="d-flex flex-wrap gap-2 mt-2">
+            <span class="info-chip"><i class="fas fa-lock"></i> 100% Private</span>
+            <span class="info-chip"><i class="fas fa-server"></i> No Cloud Upload</span>
+            <span class="info-chip"><i class="fas fa-code"></i> Open Source</span>
+          </div>
+        </div>
+
+        <!-- Right column – Illustration -->
+        <div class="col-lg-6" data-aos="fade-left" data-aos-duration="700" data-aos-delay="150">
+          <div class="hero-illustration">
+
+            <!-- Floating mini cards -->
+            <div class="hero-mini-card card-1">
+              <div class="mini-icon" style="background:rgba(34,197,94,.15);color:var(--success);">
+                <i class="fas fa-check"></i>
+              </div>
+              <div>
+                <div style="font-size:.72rem;color:var(--text-muted);">Metadata Removed</div>
+                <div style="font-size:.82rem;font-weight:700;color:var(--success);">GPS Stripped ✓</div>
+              </div>
+            </div>
+
+            <div class="hero-mini-card card-2">
+              <div class="mini-icon" style="background:rgba(37,99,235,.15);color:var(--primary);">
+                <i class="fas fa-map-marker-alt"></i>
+              </div>
+              <div>
+                <div style="font-size:.72rem;color:var(--text-muted);">GPS Detected</div>
+                <div style="font-size:.82rem;font-weight:700;color:var(--accent);">40.7128° N, 74.0060° W</div>
+              </div>
+            </div>
+
+            <!-- Main visual card -->
+            <div class="hero-image-card">
+              <div class="floating-shield"><i class="fas fa-shield-halved"></i></div>
+              <div class="illustration-main">
+                <div class="illustration-inner">
+                  <div class="mock-image-frame">
+                    <div class="scan-line"></div>
+                    <i class="fas fa-image"></i>
+                    <!-- Simulated corner markers -->
+                    <div style="position:absolute;top:8px;left:8px;width:18px;height:18px;border-top:2px solid var(--accent);border-left:2px solid var(--accent);border-radius:3px 0 0 0;"></div>
+                    <div style="position:absolute;top:8px;right:8px;width:18px;height:18px;border-top:2px solid var(--accent);border-right:2px solid var(--accent);border-radius:0 3px 0 0;"></div>
+                    <div style="position:absolute;bottom:8px;left:8px;width:18px;height:18px;border-bottom:2px solid var(--accent);border-left:2px solid var(--accent);border-radius:0 0 0 3px;"></div>
+                    <div style="position:absolute;bottom:8px;right:8px;width:18px;height:18px;border-bottom:2px solid var(--accent);border-right:2px solid var(--accent);border-radius:0 0 3px 0;"></div>
+                  </div>
+                  <div class="mock-meta-rows">
+                    <div class="mock-meta-row"><div class="mock-meta-key" style="animation:shimmer 2s .0s infinite;"></div><div class="mock-meta-val med"></div></div>
+                    <div class="mock-meta-row"><div class="mock-meta-key" style="animation:shimmer 2s .2s infinite;"></div><div class="mock-meta-val short"></div></div>
+                    <div class="mock-meta-row"><div class="mock-meta-key" style="animation:shimmer 2s .4s infinite;"></div><div class="mock-meta-val"></div></div>
+                    <div class="mock-meta-row"><div class="mock-meta-key" style="animation:shimmer 2s .6s infinite;"></div><div class="mock-meta-val med"></div></div>
+                  </div>
+                  <div class="mock-tag-row">
+                    <span class="mock-tag">EXIF</span>
+                    <span class="mock-tag">GPS</span>
+                    <span class="mock-tag">IPTC</span>
+                    <span class="mock-tag">XMP</span>
+                    <span class="mock-tag">ICC</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats row -->
+      <div class="row mt-5" data-aos="fade-up" data-aos-delay="300">
+        <div class="col-12">
+          <div class="glass-card p-4">
+            <div class="stats-grid">
+              <div class="stat-item" data-aos="zoom-in" data-aos-delay="350">
+                <div class="stat-number" data-count="50">0</div>
+                <div class="stat-label">Metadata Fields Extracted</div>
+              </div>
+              <div class="stat-item" data-aos="zoom-in" data-aos-delay="400">
+                <div class="stat-number" data-count="5">0</div>
+                <div class="stat-label">Supported Formats</div>
+              </div>
+              <div class="stat-item" data-aos="zoom-in" data-aos-delay="450">
+                <div class="stat-number" data-count="4">0</div>
+                <div class="stat-label">Export Formats</div>
+              </div>
+              <div class="stat-item" data-aos="zoom-in" data-aos-delay="500">
+                <div class="stat-number" data-count="20">0</div>
+                <div class="stat-label">MB Max File Size</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div><!-- /.hero-bg -->
+
+<!-- ── Features Section ──────────────────────────────────── -->
+<section class="features-section" id="features">
+  <div class="container">
+    <div class="text-center mb-5" data-aos="fade-up">
+      <div class="section-label"><i class="fas fa-star"></i> Capabilities</div>
+      <h2 class="section-heading">Everything You Need for <span class="text-grad">Image Forensics</span></h2>
+      <p class="text-secondary" style="max-width:540px;margin:0 auto;font-size:.95rem;line-height:1.7;">
+        A complete suite of metadata tools designed for privacy-conscious users, security researchers, and digital forensics professionals.
+      </p>
+    </div>
+
+    <div class="row g-4">
+      <!-- Feature 1 -->
+      <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="0">
+        <div class="feature-card">
+          <div class="feature-icon" style="background:rgba(37,99,235,.15);color:var(--primary);">
+            <i class="fas fa-magnifying-glass-chart"></i>
+          </div>
+          <div class="feature-title">Deep Metadata Analysis</div>
+          <p class="feature-desc">Extract EXIF, IPTC, XMP, ICC Profile, GPS coordinates, camera settings, and over 50 metadata fields from any image.</p>
+        </div>
+      </div>
+      <!-- Feature 2 -->
+      <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="80">
+        <div class="feature-card">
+          <div class="feature-icon" style="background:rgba(239,68,68,.12);color:var(--danger);">
+            <i class="fas fa-eraser"></i>
+          </div>
+          <div class="feature-title">Metadata Cleaner</div>
+          <p class="feature-desc">Selectively remove GPS, EXIF, IPTC, comments, thumbnails, or wipe all metadata at once. Download the clean image instantly.</p>
+        </div>
+      </div>
+      <!-- Feature 3 -->
+      <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="160">
+        <div class="feature-card">
+          <div class="feature-icon" style="background:rgba(34,197,94,.12);color:var(--success);">
+            <i class="fas fa-pen-to-square"></i>
+          </div>
+          <div class="feature-title">Metadata Editor</div>
+          <p class="feature-desc">Edit Author, Copyright, Description, Software, Keywords, Title, and more. Save changes and download the modified image.</p>
+        </div>
+      </div>
+      <!-- Feature 4 -->
+      <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="0">
+        <div class="feature-card">
+          <div class="feature-icon" style="background:rgba(56,189,248,.12);color:var(--accent);">
+            <i class="fas fa-code-compare"></i>
+          </div>
+          <div class="feature-title">Side-by-Side Compare</div>
+          <p class="feature-desc">Upload two images and compare their metadata with color-coded diff highlighting. Spot changes, additions and removals instantly.</p>
+        </div>
+      </div>
+      <!-- Feature 5 -->
+      <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="80">
+        <div class="feature-card">
+          <div class="feature-icon" style="background:rgba(245,158,11,.12);color:var(--warning);">
+            <i class="fas fa-map-location-dot"></i>
+          </div>
+          <div class="feature-title">GPS Map Viewer</div>
+          <p class="feature-desc">Automatically detect GPS coordinates and display photo location on an interactive Leaflet.js map with a direct Google Maps link.</p>
+        </div>
+      </div>
+      <!-- Feature 6 -->
+      <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="160">
+        <div class="feature-card">
+          <div class="feature-icon" style="background:rgba(6,182,212,.12);color:var(--info);">
+            <i class="fas fa-file-export"></i>
+          </div>
+          <div class="feature-title">Multi-Format Export</div>
+          <p class="feature-desc">Export metadata as JSON, CSV, TXT or a professionally styled PDF report. Batch-clean multiple images and download as a ZIP archive.</p>
+        </div>
+      </div>
+      <!-- Feature 7 -->
+      <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="0">
+        <div class="feature-card">
+          <div class="feature-icon" style="background:rgba(139,92,246,.12);color:#A78BFA;">
+            <i class="fas fa-chart-bar"></i>
+          </div>
+          <div class="feature-title">Image Histogram</div>
+          <p class="feature-desc">Visualize RGB channel distribution with interactive Chart.js histograms. Detect image manipulation through anomalous patterns.</p>
+        </div>
+      </div>
+      <!-- Feature 8 -->
+      <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="80">
+        <div class="feature-card">
+          <div class="feature-icon" style="background:rgba(251,146,60,.12);color:#FB923C;">
+            <i class="fas fa-palette"></i>
+          </div>
+          <div class="feature-title">Color Palette</div>
+          <p class="feature-desc">Extract the dominant color palette from any image using median-cut quantization. Click any swatch to copy the hex code.</p>
+        </div>
+      </div>
+      <!-- Feature 9 -->
+      <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="160">
+        <div class="feature-card">
+          <div class="feature-icon" style="background:rgba(37,99,235,.12);color:var(--primary);">
+            <i class="fas fa-clock-rotate-left"></i>
+          </div>
+          <div class="feature-title">History & Analytics</div>
+          <p class="feature-desc">Every operation is logged in SQLite. Browse history, search by filename, view analytics charts for operations and file formats.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── How It Works ───────────────────────────────────────── -->
+<section style="padding:5rem 0;background:var(--bg-surface);">
+  <div class="container">
+    <div class="text-center mb-5" data-aos="fade-up">
+      <div class="section-label"><i class="fas fa-list-ol"></i> Workflow</div>
+      <h2 class="section-heading">How It <span class="text-grad">Works</span></h2>
+    </div>
+    <div class="row g-4 justify-content-center">
+      <div class="col-md-4" data-aos="fade-up" data-aos-delay="0">
+        <div class="text-center p-3">
+          <div style="width:64px;height:64px;background:linear-gradient(135deg,var(--primary),var(--accent));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;color:#fff;margin:0 auto 1.2rem;box-shadow:0 8px 25px rgba(37,99,235,.4);">
+            <i class="fas fa-upload"></i>
+          </div>
+          <h5 style="font-weight:700;margin-bottom:.5rem;">1. Upload</h5>
+          <p style="font-size:.88rem;color:var(--text-secondary);">Drag & drop or browse to select your image (JPG, PNG, TIFF, WEBP). Multiple files supported for batch processing.</p>
+        </div>
+      </div>
+      <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+        <div class="text-center p-3">
+          <div style="width:64px;height:64px;background:linear-gradient(135deg,var(--accent),var(--info));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;color:#fff;margin:0 auto 1.2rem;box-shadow:0 8px 25px rgba(56,189,248,.4);">
+            <i class="fas fa-magnifying-glass"></i>
+          </div>
+          <h5 style="font-weight:700;margin-bottom:.5rem;">2. Analyze</h5>
+          <p style="font-size:.88rem;color:var(--text-secondary);">Instantly view all metadata: EXIF camera data, GPS location, software info, timestamps, and raw EXIF values.</p>
+        </div>
+      </div>
+      <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+        <div class="text-center p-3">
+          <div style="width:64px;height:64px;background:linear-gradient(135deg,var(--success),#059669);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;color:#fff;margin:0 auto 1.2rem;box-shadow:0 8px 25px rgba(34,197,94,.4);">
+            <i class="fas fa-download"></i>
+          </div>
+          <h5 style="font-weight:700;margin-bottom:.5rem;">3. Act & Export</h5>
+          <p style="font-size:.88rem;color:var(--text-secondary);">Edit fields, strip metadata, export as PDF/JSON/CSV, or compare two images. Download the processed result in seconds.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA Section ────────────────────────────────────────── -->
+<section style="padding:6rem 0;">
+  <div class="container">
+    <div class="glass-card p-5 text-center" data-aos="zoom-in" style="background:linear-gradient(135deg,rgba(37,99,235,.15),rgba(56,189,248,.08));border-color:rgba(37,99,235,.25);">
+      <div style="font-size:3rem;margin-bottom:1rem;">🛡️</div>
+      <h2 class="section-heading mb-3">Ready to Analyze Your Images?</h2>
+      <p style="color:var(--text-secondary);font-size:.95rem;max-width:500px;margin:0 auto 2rem;">
+        Start protecting your privacy and forensically analyzing image metadata in seconds — no account required.
+      </p>
+      <a href="/dashboard">
+        <button class="btn-hero-primary ripple" style="font-size:1.05rem;padding:1rem 2.5rem;">
+          <i class="fas fa-shield-halved"></i>
+          Launch MetaShield
+        </button>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ── Footer ──────────────────────────────────────────────── -->
+<footer class="ms-footer">
+  <div class="container">
+    <div class="footer-logo"><i class="fas fa-shield-halved me-2" style="color:var(--primary);"></i>MetaShield</div>
+    <p style="margin-bottom:1rem;">Image Metadata Analyzer &amp; Editor</p>
+    <div class="d-flex justify-content-center gap-3 mb-2" style="font-size:.8rem;">
+      <a href="/dashboard" style="color:var(--text-muted);">Dashboard</a>
+      <a href="/history"   style="color:var(--text-muted);">History</a>
+      <a href="/compare"   style="color:var(--text-muted);">Compare</a>
+    </div>
+    <p style="font-size:.75rem;color:var(--text-muted);margin-top:.5rem;">
+      Built with Flask · Pillow · piexif · Chart.js · Leaflet.js
+    </p>
+  </div>
+</footer>
+
+<!-- Toast container -->
+<div class="toast-container-custom" id="toastContainer"></div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+<script>
+  // AOS init
+  AOS.init({ once: true, offset: 60 });
+
+  // Page loader
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      document.getElementById('page-loader').classList.add('hidden');
+    }, 600);
+  });
+
+  // Theme toggle
+  const root = document.documentElement;
+  const toggleBtn = document.getElementById('themeToggle');
+  const saved = localStorage.getItem('ms-theme') || 'dark';
+  root.setAttribute('data-theme', saved);
+  toggleBtn.addEventListener('click', () => {
+    const cur = root.getAttribute('data-theme');
+    const next = cur === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    localStorage.setItem('ms-theme', next);
+  });
+
+  // Animated counters
+  function animateCounter(el) {
+    const target = parseInt(el.dataset.count);
+    const suffix = el.dataset.suffix || '';
+    let current = 0;
+    const step = Math.ceil(target / 40);
+    const interval = setInterval(() => {
+      current = Math.min(current + step, target);
+      el.textContent = current + suffix;
+      if (current >= target) clearInterval(interval);
+    }, 30);
+  }
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { animateCounter(e.target); observer.unobserve(e.target); } });
+  }, { threshold: 0.5 });
+  document.querySelectorAll('[data-count]').forEach(el => observer.observe(el));
+
+  // Ripple effect
+  document.querySelectorAll('.ripple').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      const r = document.createElement('span');
+      r.className = 'ripple-effect';
+      const rect = this.getBoundingClientRect();
+      const size = Math.max(rect.width, rect.height);
+      r.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px;`;
+      this.appendChild(r);
+      setTimeout(() => r.remove(), 600);
+    });
+  });
+</script>
+</body>
+</html>

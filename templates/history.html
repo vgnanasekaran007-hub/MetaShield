@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>History & Analytics – MetaShield</title>
+  <meta name="description" content="Browse your image analysis history and view analytics charts." />
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="https://unpkg.com/aos@2.3.4/dist/aos.css" />
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+
+<!-- Page Loader -->
+<div id="page-loader">
+  <div class="loader-logo"><i class="fas fa-shield-halved"></i></div>
+  <div style="font-size:.85rem;color:var(--text-muted);margin-bottom:.75rem;font-weight:600;letter-spacing:.05em;">METASHIELD</div>
+  <div class="loader-bar"><div class="loader-bar-inner"></div></div>
+</div>
+
+<!-- Navbar -->
+<nav class="ms-navbar">
+  <a href="/" class="nav-logo text-decoration-none">
+    <div class="logo-icon"><i class="fas fa-shield-halved"></i></div>
+    <span class="brand">Meta<span class="dot">Shield</span></span>
+  </a>
+  <div class="ms-auto d-flex align-items-center gap-3">
+    <a href="/dashboard" class="nav-link-custom"><i class="fas fa-tachometer-alt me-1"></i>Dashboard</a>
+    <a href="/compare"   class="nav-link-custom"><i class="fas fa-code-compare me-1"></i>Compare</a>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme"></button>
+  </div>
+</nav>
+
+<div style="padding-top: var(--header-h);">
+<div class="container-fluid px-4" style="padding-top:2rem;padding-bottom:4rem;">
+
+  <!-- Header -->
+  <div class="dash-header" data-aos="fade-down">
+    <div>
+      <div class="dash-title"><i class="fas fa-clock-rotate-left text-primary"></i> History &amp; Analytics</div>
+      <div class="dash-subtitle">All uploaded images and operations are logged here.</div>
+    </div>
+    <a href="/dashboard">
+      <button class="btn-ghost py-2 px-3"><i class="fas fa-plus me-1"></i> New Upload</button>
+    </a>
+  </div>
+
+  <!-- Analytics Charts -->
+  <div class="row g-4 mb-4">
+    <!-- Operations pie -->
+    <div class="col-md-4" data-aos="fade-up" data-aos-delay="0">
+      <div class="glass-card p-4 h-100">
+        <div class="section-title"><i class="fas fa-chart-pie"></i> Operations</div>
+        <div class="chart-container"><canvas id="opsChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Daily uploads line -->
+    <div class="col-md-5" data-aos="fade-up" data-aos-delay="80">
+      <div class="glass-card p-4 h-100">
+        <div class="section-title"><i class="fas fa-chart-line"></i> Daily Uploads (14 days)</div>
+        <div class="chart-container"><canvas id="dailyChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Formats donut -->
+    <div class="col-md-3" data-aos="fade-up" data-aos-delay="160">
+      <div class="glass-card p-4 h-100">
+        <div class="section-title"><i class="fas fa-chart-donut"></i> Formats</div>
+        <div class="chart-container"><canvas id="formatsChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Totals row -->
+  <div class="row g-3 mb-4" id="totalCards">
+    <div class="col-6 col-md-3" data-aos="zoom-in" data-aos-delay="0">
+      <div class="glass-card p-3 text-center">
+        <div class="stat-number" style="font-size:1.8rem;" id="totalImages">–</div>
+        <div class="stat-label">Total Images</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3" data-aos="zoom-in" data-aos-delay="50">
+      <div class="glass-card p-3 text-center">
+        <div class="stat-number" style="font-size:1.8rem;" id="totalSize">–</div>
+        <div class="stat-label">Total Processed</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3" data-aos="zoom-in" data-aos-delay="100">
+      <div class="glass-card p-3 text-center">
+        <div class="stat-number" style="font-size:1.8rem;" id="totalAnalyzed">–</div>
+        <div class="stat-label">Analyzed</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3" data-aos="zoom-in" data-aos-delay="150">
+      <div class="glass-card p-3 text-center">
+        <div class="stat-number" style="font-size:1.8rem;" id="totalCleaned">–</div>
+        <div class="stat-label">Cleaned</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- History Table -->
+  <div class="glass-card p-4" data-aos="fade-up">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3">
+      <div class="section-title mb-0" style="border:none;padding:0;"><i class="fas fa-table-list"></i> Upload History</div>
+      <div class="d-flex gap-2 flex-wrap align-items-center">
+        <!-- Search -->
+        <div style="position:relative;">
+          <i class="fas fa-search" style="position:absolute;left:.75rem;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:.8rem;pointer-events:none;"></i>
+          <input type="text" class="form-control-custom" id="historySearch" placeholder="Search by filename…" style="padding-left:2.2rem;width:220px;" oninput="searchHistory(this.value)" />
+        </div>
+        <!-- Filter -->
+        <select class="form-control-custom" id="historyFilter" style="width:auto;" onchange="loadHistory()">
+          <option value="">All Operations</option>
+          <option value="analyze">Analyze</option>
+          <option value="edit">Edit</option>
+          <option value="remove">Remove</option>
+        </select>
+        <button class="btn-danger-custom py-2 px-3" onclick="clearAllHistory()" style="font-size:.83rem;">
+          <i class="fas fa-trash me-1"></i> Clear All
+        </button>
+      </div>
+    </div>
+
+    <!-- Skeleton loader -->
+    <div id="historySkeleton">
+      <div class="skeleton skeleton-row"></div>
+      <div class="skeleton skeleton-row"></div>
+      <div class="skeleton skeleton-row"></div>
+    </div>
+
+    <!-- Actual table -->
+    <div id="historyTableWrap" style="display:none;">
+      <div class="table-responsive">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Filename</th>
+              <th>Operation</th>
+              <th>Size</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="historyBody"></tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+        <div style="font-size:.82rem;color:var(--text-muted);" id="historyInfo"></div>
+        <div class="d-flex gap-1" id="historyPagination"></div>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div id="historyEmpty" style="display:none;" class="text-center py-5">
+      <i class="fas fa-inbox" style="font-size:3rem;color:var(--text-muted);margin-bottom:1rem;display:block;"></i>
+      <div style="color:var(--text-muted);">No history yet. Start by uploading an image.</div>
+      <a href="/dashboard" class="btn-primary-custom mt-3 py-2 px-4 d-inline-flex">
+        <span><i class="fas fa-upload me-1"></i> Upload Image</span>
+      </a>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container-custom" id="toastContainer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.10.5/dist/sweetalert2.all.min.js"></script>
+<script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+<script>
+  AOS.init({ once: true });
+
+  // Theme
+  const root = document.documentElement;
+  root.setAttribute('data-theme', localStorage.getItem('ms-theme') || 'dark');
+  document.getElementById('themeToggle').addEventListener('click', () => {
+    const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    localStorage.setItem('ms-theme', next);
+  });
+
+  window.addEventListener('load', () => setTimeout(() => document.getElementById('page-loader').classList.add('hidden'), 600));
+
+  // ── State ──────────────────────────────────────────────────
+  let currentPage = 1;
+  const PER_PAGE = 15;
+  let searchTimer = null;
+
+  // ── Charts ──────────────────────────────────────────────────
+  Chart.defaults.color = '#94A3B8';
+  Chart.defaults.font.family = 'Poppins, sans-serif';
+
+  let opsChart, dailyChart, formatsChart;
+
+  function initCharts(data) {
+    const { operations, daily, formats, totals } = data;
+
+    // Total cards
+    document.getElementById('totalImages').textContent   = totals.count;
+    document.getElementById('totalSize').textContent     = humanSize(totals.size);
+    document.getElementById('totalAnalyzed').textContent = operations.analyze || 0;
+    document.getElementById('totalCleaned').textContent  = operations.remove || 0;
+
+    // Ops chart
+    const opLabels = Object.keys(operations);
+    const opData   = Object.values(operations);
+    if (opsChart) opsChart.destroy();
+    opsChart = new Chart(document.getElementById('opsChart'), {
+      type: 'doughnut',
+      data: {
+        labels: opLabels.map(l => l.charAt(0).toUpperCase() + l.slice(1)),
+        datasets: [{ data: opData, backgroundColor: ['#2563EB','#22C55E','#EF4444','#F59E0B','#38BDF8'], borderWidth: 0 }]
+      },
+      options: { responsive:true, maintainAspectRatio:false, plugins: { legend: { position:'bottom', labels:{padding:12,font:{size:11}} } } }
+    });
+
+    // Daily chart
+    const dLabels = daily.map(d => d.day.slice(5));
+    const dCounts = daily.map(d => d.count);
+    if (dailyChart) dailyChart.destroy();
+    dailyChart = new Chart(document.getElementById('dailyChart'), {
+      type: 'line',
+      data: {
+        labels: dLabels,
+        datasets: [{
+          label: 'Uploads',
+          data: dCounts,
+          borderColor: '#2563EB',
+          backgroundColor: 'rgba(37,99,235,.15)',
+          fill: true,
+          tension: .4,
+          pointBackgroundColor: '#38BDF8',
+          pointRadius: 4,
+        }]
+      },
+      options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ x:{ grid:{ color:'rgba(99,116,143,.1)' } }, y:{ grid:{ color:'rgba(99,116,143,.1)' }, beginAtZero:true, ticks:{ stepSize:1 } } } }
+    });
+
+    // Formats chart
+    const fLabels = Object.keys(formats);
+    const fCounts = Object.values(formats);
+    if (formatsChart) formatsChart.destroy();
+    formatsChart = new Chart(document.getElementById('formatsChart'), {
+      type: 'doughnut',
+      data: {
+        labels: fLabels,
+        datasets: [{ data: fCounts, backgroundColor: ['#2563EB','#38BDF8','#22C55E','#F59E0B','#EF4444'], borderWidth: 0 }]
+      },
+      options: { responsive:true, maintainAspectRatio:false, plugins: { legend: { position:'bottom', labels:{ padding:10, font:{ size:11 } } } } }
+    });
+  }
+
+  function humanSize(bytes) {
+    const units = ['B','KB','MB','GB'];
+    let i = 0;
+    while (bytes >= 1024 && i < 3) { bytes /= 1024; i++; }
+    return bytes.toFixed(1) + ' ' + units[i];
+  }
+
+  // ── Load analytics ─────────────────────────────────────────
+  function loadAnalytics() {
+    fetch('/analytics')
+      .then(r => r.json())
+      .then(data => { if (data.success) initCharts(data); })
+      .catch(() => {});
+  }
+
+  // ── Load history ──────────────────────────────────────────
+  function loadHistory(page = 1) {
+    currentPage = page;
+    const q = document.getElementById('historySearch').value;
+
+    document.getElementById('historySkeleton').style.display = 'block';
+    document.getElementById('historyTableWrap').style.display = 'none';
+    document.getElementById('historyEmpty').style.display = 'none';
+
+    fetch(`/api/history?page=${page}&per_page=${PER_PAGE}&q=${encodeURIComponent(q)}`)
+      .then(r => r.json())
+      .then(data => {
+        document.getElementById('historySkeleton').style.display = 'none';
+
+        if (!data.records.length) {
+          document.getElementById('historyEmpty').style.display = 'block';
+          return;
+        }
+
+        renderHistoryTable(data);
+        document.getElementById('historyTableWrap').style.display = 'block';
+      })
+      .catch(() => { document.getElementById('historySkeleton').style.display = 'none'; });
+  }
+
+  function renderHistoryTable(data) {
+    const opColors = { analyze:'badge-primary', edit:'badge-info', remove:'badge-danger' };
+    const opIcons  = { analyze:'fa-eye', edit:'fa-pen', remove:'fa-eraser' };
+
+    document.getElementById('historyBody').innerHTML = data.records.map(r => {
+      const opCls  = opColors[r.operation] || 'badge-info';
+      const opIcon = opIcons[r.operation]  || 'fa-circle';
+      const date   = new Date(r.created_at + 'Z').toLocaleString();
+      const size   = r.file_size ? humanSize(r.file_size) : '—';
+      return `<tr>
+        <td style="color:var(--text-muted);font-size:.78rem;">${r.id}</td>
+        <td>
+          <div style="font-weight:600;font-size:.87rem;max-width:200px;" class="truncate" title="${escHtml(r.original_name)}">${escHtml(r.original_name)}</div>
+          <div style="font-size:.73rem;color:var(--text-muted);font-family:var(--font-mono);">${escHtml(r.filename)}</div>
+        </td>
+        <td><span class="${opCls}"><i class="fas ${opIcon} me-1"></i>${r.operation}</span></td>
+        <td style="font-family:var(--font-mono);font-size:.82rem;">${size}</td>
+        <td style="font-size:.82rem;color:var(--text-secondary);">${date}</td>
+        <td>
+          <div class="d-flex gap-1">
+            <a href="/download/${r.filename}" class="img-action-btn" title="Download" style="width:30px;height:30px;background:rgba(37,99,235,.2);color:var(--primary);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.78rem;"><i class="fas fa-download"></i></a>
+            <button onclick="deleteRecord(${r.id})" class="img-action-btn" title="Delete" style="width:30px;height:30px;background:rgba(239,68,68,.15);color:var(--danger);border-radius:6px;border:none;font-size:.78rem;"><i class="fas fa-trash"></i></button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+
+    // Info
+    const start = (data.page - 1) * data.per_page + 1;
+    const end   = Math.min(data.page * data.per_page, data.total);
+    document.getElementById('historyInfo').textContent = `Showing ${start}–${end} of ${data.total} records`;
+
+    // Pagination
+    let paginationHtml = '';
+    for (let p = 1; p <= data.pages; p++) {
+      paginationHtml += `<button onclick="loadHistory(${p})" class="img-action-btn" style="width:32px;height:32px;border-radius:6px;${p===data.page?'background:var(--primary);':'background:var(--bg-input);color:var(--text-secondary);'}font-size:.78rem;border:1px solid var(--border);">${p}</button>`;
+    }
+    document.getElementById('historyPagination').innerHTML = paginationHtml;
+  }
+
+  function searchHistory(q) {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => loadHistory(1), 350);
+  }
+
+  function deleteRecord(id) {
+    Swal.fire({
+      title: 'Delete this record?',
+      text: 'The file and its history entry will be removed.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#EF4444',
+      cancelButtonColor: '#374151',
+      confirmButtonText: 'Delete',
+      background: 'var(--bg-card)',
+      color: 'var(--text-primary)',
+    }).then(result => {
+      if (!result.isConfirmed) return;
+      fetch(`/delete/${id}`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) { showToast('Record deleted', 'success'); loadHistory(currentPage); loadAnalytics(); }
+          else showToast(data.error || 'Delete failed', 'error');
+        });
+    });
+  }
+
+  function clearAllHistory() {
+    Swal.fire({
+      title: 'Clear all history?',
+      text: 'This will delete ALL records and files permanently.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#EF4444',
+      cancelButtonColor: '#374151',
+      confirmButtonText: 'Clear All',
+      background: 'var(--bg-card)',
+      color: 'var(--text-primary)',
+    }).then(async result => {
+      if (!result.isConfirmed) return;
+      // Get all IDs and delete
+      const r = await fetch('/api/history?per_page=1000');
+      const data = await r.json();
+      for (const rec of data.records) {
+        await fetch(`/delete/${rec.id}`, { method: 'POST' });
+      }
+      showToast('History cleared', 'success');
+      loadHistory(1);
+      loadAnalytics();
+    });
+  }
+
+  function showToast(msg, type = 'info') {
+    const icons = { success:'fa-check-circle', error:'fa-circle-xmark', info:'fa-circle-info', warning:'fa-triangle-exclamation' };
+    const colors = { success:'var(--success)', error:'var(--danger)', info:'var(--info)', warning:'var(--warning)' };
+    const c = document.getElementById('toastContainer');
+    const t = document.createElement('div');
+    t.className = `toast-custom ${type}`;
+    t.innerHTML = `<i class="fas ${icons[type]}" style="color:${colors[type]};font-size:1.1rem;flex-shrink:0;"></i><span>${msg}</span>`;
+    c.appendChild(t);
+    setTimeout(() => { t.classList.add('toast-exit'); setTimeout(() => t.remove(), 300); }, 3000);
+  }
+
+  function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // Init
+  loadAnalytics();
+  loadHistory(1);
+</script>
+</body>
+</html>
