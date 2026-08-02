@@ -230,19 +230,6 @@ MetaShield/
 
 ---
 
-## 🗺️ Roadmap
-
-- [ ] Steganography scanner
-- [ ] Hidden text detector
-- [ ] Duplicate image detection (perceptual hash)
-- [ ] Metadata integrity checker
-- [ ] Fake metadata detection
-- [ ] QR code metadata export
-- [ ] Docker deployment support
-- [ ] REST API documentation page
-
----
-
 ## 🤝 Contributing
 
 1. Fork the repository
