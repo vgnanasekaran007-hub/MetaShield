@@ -104,31 +104,6 @@
 
 ---
 
-## 🚀 Quick Start
-
-### Prerequisites
-- **Python 3.10+**
-- **pip**
-
-### Installation
-
-```bash
-# 1. Clone the repository
-git clone https://github.com/vgnanasekaran007-hub/MetaShield.git
-cd MetaShield
-
-# 2. Create a virtual environment (recommended)
-python3 -m venv venv
-source venv/bin/activate        # Linux / macOS
-# venv\Scripts\activate         # Windows
-
-# 3. Install dependencies
-pip install -r requirements.txt
-
-# 4. Run the application
-python app.py
-```
-
 ### 🌐 Open in Browser
 
 ```
