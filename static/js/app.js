@@ -54,9 +54,19 @@ function setTheme(theme) {
 
 /* ── Page loader ─────────────────────────────────────────────── */
 function initLoader() {
-  window.addEventListener('load', () => {
-    setTimeout(() => document.getElementById('page-loader').classList.add('hidden'), 700);
-  });
+  const hideLoader = () => {
+    setTimeout(() => {
+      const loader = document.getElementById('page-loader');
+      if (loader) loader.classList.add('hidden');
+    }, 700);
+  };
+
+  // If page already fully loaded, hide immediately; otherwise wait for load event
+  if (document.readyState === 'complete') {
+    hideLoader();
+  } else {
+    window.addEventListener('load', hideLoader);
+  }
 }
 
 /* ── Sidebar ────────────────────────────────────────────────── */
@@ -102,15 +112,31 @@ function initUploadZone() {
   const zone = document.getElementById('uploadZone');
   const fileInput = document.getElementById('fileInput');
 
-  zone.addEventListener('click', () => fileInput.click());
-  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  if (!zone || !fileInput) {
+    console.warn('[MetaShield] Upload zone or file input not found.');
+    return;
+  }
+
+  // Click to open file dialog – stop event from re-firing on the input itself
+  zone.addEventListener('click', (e) => {
+    if (e.target === fileInput) return; // prevent recursive click loop
+    fileInput.click();
+  });
+
+  zone.addEventListener('dragover', e => { e.preventDefault(); e.stopPropagation(); zone.classList.add('drag-over'); });
   zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
   zone.addEventListener('drop', e => {
     e.preventDefault();
+    e.stopPropagation();
     zone.classList.remove('drag-over');
     handleFiles(e.dataTransfer.files);
   });
-  fileInput.addEventListener('change', e => handleFiles(e.target.files));
+
+  fileInput.addEventListener('change', e => {
+    handleFiles(e.target.files);
+    // Reset so the same file can be re-uploaded
+    fileInput.value = '';
+  });
 }
 
 function handleFiles(files) {
@@ -230,8 +256,8 @@ function renderQuickStats(meta) {
 
   const statsEl = document.getElementById('quickStats');
   if (statsEl) {
-    statsEl.style.removeProperty('display');
-    statsEl.style.display = 'flex';
+    // Remove the !important inline style and set display properly
+    statsEl.style.cssText = 'display: flex !important;';
   }
 
   setText('statFormat', fi.extension || '?');
@@ -515,7 +541,8 @@ function saveMetadata() {
 /* ── Cleaner ──────────────────────────────────────────────────── */
 function toggleCleanOpt(row, key) {
   const cb = row.querySelector('input[type="checkbox"]');
-  if (cb && event && event.target !== cb) cb.checked = !cb.checked;
+  const evt = window.event || null;
+  if (cb && (!evt || evt.target !== cb)) cb.checked = !cb.checked;
 }
 
 function checkAllClean(checked) {
