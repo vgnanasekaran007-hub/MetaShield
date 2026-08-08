@@ -92,7 +92,7 @@
 ### 📜 History & Analytics
 - Every operation logged in **SQLite** (auto-created, no setup needed)
 - Operations breakdown (pie chart), Daily uploads for last 14 days (line chart), Format distribution (donut chart)
-- Search, filter, paginate history; delete individual records or clear all
+- Search, filter, paginate history; delete individual records or clear al
 
 ### 🎨 UI/UX
 - **Glassmorphism dark/light theme** — persisted preference
