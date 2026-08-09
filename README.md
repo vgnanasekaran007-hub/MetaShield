@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🛡️ MetaShield
+# 🛡️ MetaShield 🛡️
 
 ### Image Metadata Analyzer & Editor
 
