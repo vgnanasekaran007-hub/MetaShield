@@ -19,6 +19,7 @@ API Endpoints:
     GET    /analytics           Chart data for history page
 """
 
+import base64
 import io
 import json
 import os
@@ -217,12 +218,25 @@ def upload():
         metadata = extract_metadata(save_path)
         record_id = save_history(unique_name, f.filename, "analyze", size, metadata)
 
+        # Generate base64 preview so the browser can display without a separate HTTP request
+        # (required for Vercel/serverless where /tmp files can't be served as static assets)
+        preview_data_url = None
+        try:
+            with open(save_path, "rb") as img_file:
+                img_bytes = img_file.read()
+            ext_lower = unique_name.rsplit(".", 1)[-1].lower()
+            mime = "image/jpeg" if ext_lower in ("jpg", "jpeg") else f"image/{ext_lower}"
+            preview_data_url = f"data:{mime};base64,{base64.b64encode(img_bytes).decode()}"
+        except Exception:
+            pass
+
         results.append({
             "success": True,
             "filename": unique_name,
             "original_name": f.filename,
             "record_id": record_id,
             "metadata": metadata,
+            "preview_data_url": preview_data_url,
         })
 
     return jsonify({"success": True, "files": results})
@@ -575,8 +589,17 @@ def analytics():
 
 @app.route("/preview/<path:filename>")
 def preview(filename: str):
+    """Serve a preview image. Falls back to /tmp on serverless environments."""
     safe = sanitise_filename(filename)
-    return send_from_directory(app.config["UPLOAD_FOLDER"], safe)
+    # Primary location (local dev)
+    primary = os.path.join(app.config["UPLOAD_FOLDER"], safe)
+    if os.path.isfile(primary):
+        return send_from_directory(app.config["UPLOAD_FOLDER"], safe)
+    # Fallback: /tmp/metashield/uploads (Vercel/serverless)
+    tmp_path = os.path.join("/tmp/metashield/uploads", safe)
+    if os.path.isfile(tmp_path):
+        return send_from_directory("/tmp/metashield/uploads", safe)
+    abort(404)
 
 
 # ── Error handlers ────────────────────────────────────────────────────────────

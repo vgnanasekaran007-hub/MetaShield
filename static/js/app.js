@@ -211,9 +211,14 @@ function renderPreview(fileData) {
   const fi = meta.file_info || {};
   const ii = meta.image_info || {};
 
+  // Use base64 data URL from upload response (works on Vercel/serverless),
+  // fall back to /preview/ route for local development
+  const previewSrc = fileData.preview_data_url || ('/preview/' + fileData.filename);
+  MS.previewSrc = previewSrc;  // store for fullscreen / download
+
   // Show image
   const img = document.getElementById('previewImg');
-  img.src = '/preview/' + fileData.filename;
+  img.src = previewSrc;
   img.style.transform = 'rotate(0deg)';
   MS.previewRotation = 0;
 
@@ -233,7 +238,7 @@ function renderPreview(fileData) {
   // Update editor & cleaner previews
   ['editorPreviewImg', 'cleanerPreviewImg'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.src = '/preview/' + fileData.filename;
+    if (el) el.src = previewSrc;
   });
 
   // Show editor/cleaner sections
