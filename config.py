@@ -9,19 +9,30 @@ import os
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
+# Detect if running in a serverless/read-only environment (e.g. Vercel, AWS Lambda, or read-only filesystem)
+IS_SERVERLESS = os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME") or not os.access(BASE_DIR, os.W_OK)
+
+
 class Config:
     # ── Security ──────────────────────────────────────────────────────────────
     SECRET_KEY = os.environ.get("SECRET_KEY", "metashield-secret-key-change-in-production")
     WTF_CSRF_ENABLED = True
 
     # ── Upload settings ───────────────────────────────────────────────────────
-    UPLOAD_FOLDER = os.path.join(BASE_DIR, "static", "uploads")
-    DOWNLOAD_FOLDER = os.path.join(BASE_DIR, "static", "downloads")
+    if IS_SERVERLESS:
+        UPLOAD_FOLDER = "/tmp/metashield/uploads"
+        DOWNLOAD_FOLDER = "/tmp/metashield/downloads"
+    else:
+        UPLOAD_FOLDER = os.path.join(BASE_DIR, "static", "uploads")
+        DOWNLOAD_FOLDER = os.path.join(BASE_DIR, "static", "downloads")
     MAX_CONTENT_LENGTH = 20 * 1024 * 1024  # 20 MB
     ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "tiff", "tif", "webp"}
 
     # ── Database ──────────────────────────────────────────────────────────────
-    DATABASE = os.path.join(BASE_DIR, "database.db")
+    if IS_SERVERLESS:
+        DATABASE = "/tmp/metashield/database.db"
+    else:
+        DATABASE = os.path.join(BASE_DIR, "database.db")
 
     # ── Rate limiting ─────────────────────────────────────────────────────────
     RATELIMIT_DEFAULT = "100 per hour"

@@ -48,8 +48,10 @@ app = Flask(__name__)
 app.config.from_object(Config)
 
 # Ensure required directories exist
-for d in (app.config["UPLOAD_FOLDER"], app.config["DOWNLOAD_FOLDER"]):
-    os.makedirs(d, exist_ok=True)
+db_dir = os.path.dirname(app.config["DATABASE"])
+for d in (app.config["UPLOAD_FOLDER"], app.config["DOWNLOAD_FOLDER"], db_dir):
+    if d:
+        os.makedirs(d, exist_ok=True)
 
 
 # ── Database ──────────────────────────────────────────────────────────────────
