@@ -9,10 +9,11 @@
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![Flask](https://img.shields.io/badge/Flask-3.1-000000?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com)
 [![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white)](https://getbootstrap.com)
-[![Vercel](https://img.shields.io/badge/Deployed-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://meta-shield-eight.vercel.app/)
+[![Vercel](https://img.shields.io/badge/Deployed-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://meta-shield-2xyi.vercel.app/)
 [![License](https://img.shields.io/badge/License-MIT-22C55E?style=for-the-badge)](LICENSE)
 
-### 🌐 [Live Demo → meta-shield-eight.vercel.app](https://meta-shield-eight.vercel.app/)
+### 🚀 [View Live Project](https://meta-shield-2xyi.vercel.app/)
+
 
 > A production-ready cybersecurity web application for digital forensics professionals,  
 > privacy-conscious users, and software developers.
