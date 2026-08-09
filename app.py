@@ -174,72 +174,91 @@ def upload():
     """
     Upload one or more image files.
     Returns list of {filename, original_name, record_id, metadata} objects.
+    Always returns JSON — never HTML — even on server errors.
     """
-    if "file" not in request.files:
-        return error_response("No file part in request.")
+    try:
+        if "file" not in request.files:
+            return error_response("No file part in request.")
 
-    files = request.files.getlist("file")
-    if not files or all(f.filename == "" for f in files):
-        return error_response("No files selected.")
+        files = request.files.getlist("file")
+        if not files or all(f.filename == "" for f in files):
+            return error_response("No files selected.")
 
-    results = []
-    for f in files:
-        if f.filename == "":
-            continue
-        if not allowed_file(f.filename):
+        results = []
+        for f in files:
+            if f.filename == "":
+                continue
+            if not allowed_file(f.filename):
+                results.append({
+                    "original_name": f.filename,
+                    "success": False,
+                    "error": f"Format not allowed. Supported: {', '.join(app.config['ALLOWED_EXTENSIONS'])}",
+                })
+                continue
+
+            ext = f.filename.rsplit(".", 1)[-1].lower()
+            unique_name = f"{uuid.uuid4().hex}.{ext}"
+
+            # Ensure upload directory exists (critical on Vercel /tmp)
+            os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+            save_path = os.path.join(app.config["UPLOAD_FOLDER"], unique_name)
+
+            try:
+                f.save(save_path)
+            except Exception as e:
+                results.append({"original_name": f.filename, "success": False, "error": str(e)})
+                continue
+
+            # Check size after save
+            size = os.path.getsize(save_path)
+            if size > app.config["MAX_CONTENT_LENGTH"]:
+                os.remove(save_path)
+                results.append({
+                    "original_name": f.filename,
+                    "success": False,
+                    "error": "File exceeds 20 MB limit.",
+                })
+                continue
+
+            try:
+                metadata = extract_metadata(save_path)
+            except Exception as meta_err:
+                metadata = {}
+                print(f"[MetaShield] metadata extraction error: {meta_err}")
+
+            try:
+                record_id = save_history(unique_name, f.filename, "analyze", size, metadata)
+            except Exception as db_err:
+                record_id = -1
+                print(f"[MetaShield] DB history error: {db_err}")
+
+            # Encode image as base64 data URL — works in serverless where /tmp
+            # files cannot be served over HTTP between separate Lambda invocations
+            preview_data_url = None
+            try:
+                with open(save_path, "rb") as img_file:
+                    img_bytes = img_file.read()
+                ext_lower = unique_name.rsplit(".", 1)[-1].lower()
+                mime = "image/jpeg" if ext_lower in ("jpg", "jpeg") else f"image/{ext_lower}"
+                preview_data_url = f"data:{mime};base64,{base64.b64encode(img_bytes).decode()}"
+            except Exception as b64_err:
+                print(f"[MetaShield] base64 preview error: {b64_err}")
+
             results.append({
+                "success": True,
+                "filename": unique_name,
                 "original_name": f.filename,
-                "success": False,
-                "error": f"Format not allowed. Supported: {', '.join(app.config['ALLOWED_EXTENSIONS'])}",
+                "record_id": record_id,
+                "metadata": metadata,
+                "preview_data_url": preview_data_url,
             })
-            continue
 
-        ext = f.filename.rsplit(".", 1)[-1].lower()
-        unique_name = f"{uuid.uuid4().hex}.{ext}"
-        save_path = os.path.join(app.config["UPLOAD_FOLDER"], unique_name)
+        return jsonify({"success": True, "files": results})
 
-        try:
-            f.save(save_path)
-        except Exception as e:
-            results.append({"original_name": f.filename, "success": False, "error": str(e)})
-            continue
-
-        # Check size after save
-        size = os.path.getsize(save_path)
-        if size > app.config["MAX_CONTENT_LENGTH"]:
-            os.remove(save_path)
-            results.append({
-                "original_name": f.filename,
-                "success": False,
-                "error": "File exceeds 20 MB limit.",
-            })
-            continue
-
-        metadata = extract_metadata(save_path)
-        record_id = save_history(unique_name, f.filename, "analyze", size, metadata)
-
-        # Generate base64 preview so the browser can display without a separate HTTP request
-        # (required for Vercel/serverless where /tmp files can't be served as static assets)
-        preview_data_url = None
-        try:
-            with open(save_path, "rb") as img_file:
-                img_bytes = img_file.read()
-            ext_lower = unique_name.rsplit(".", 1)[-1].lower()
-            mime = "image/jpeg" if ext_lower in ("jpg", "jpeg") else f"image/{ext_lower}"
-            preview_data_url = f"data:{mime};base64,{base64.b64encode(img_bytes).decode()}"
-        except Exception:
-            pass
-
-        results.append({
-            "success": True,
-            "filename": unique_name,
-            "original_name": f.filename,
-            "record_id": record_id,
-            "metadata": metadata,
-            "preview_data_url": preview_data_url,
-        })
-
-    return jsonify({"success": True, "files": results})
+    except Exception as fatal_err:
+        import traceback
+        print(f"[MetaShield] FATAL upload error:\n{traceback.format_exc()}")
+        return jsonify({"success": False, "error": f"Server error: {str(fatal_err)}"}), 500
 
 
 # ── API: Metadata ─────────────────────────────────────────────────────────────
@@ -619,6 +638,22 @@ def too_large(e):
 @app.errorhandler(429)
 def rate_limited(e):
     return jsonify({"success": False, "error": "Too many requests."}), 429
+
+
+@app.errorhandler(500)
+def internal_error(e):
+    """Always return JSON on 500 errors — prevents browser from parsing HTML as JSON."""
+    import traceback
+    print(f"[MetaShield] 500 error: {traceback.format_exc()}")
+    return jsonify({"success": False, "error": "Internal server error. Please try again."}), 500
+
+
+@app.errorhandler(Exception)
+def unhandled_exception(e):
+    """Catch-all: ensure all unhandled exceptions return JSON not HTML."""
+    import traceback
+    print(f"[MetaShield] Unhandled exception: {traceback.format_exc()}")
+    return jsonify({"success": False, "error": f"Unexpected error: {str(e)}"}), 500
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────

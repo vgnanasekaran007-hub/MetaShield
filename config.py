@@ -9,14 +9,19 @@ import os
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
-# Detect if running in a serverless/read-only environment (e.g. Vercel, AWS Lambda, or read-only filesystem)
-IS_SERVERLESS = os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME") or not os.access(BASE_DIR, os.W_OK)
+# Detect serverless/read-only environment more reliably
+# Check env vars first (most reliable), then fall back to write-access test
+_is_vercel = bool(os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"))
+_is_lambda = bool(os.environ.get("AWS_LAMBDA_FUNCTION_NAME"))
+_in_var_task = BASE_DIR.startswith("/var/task")  # Vercel Lambda deploy path
+IS_SERVERLESS = _is_vercel or _is_lambda or _in_var_task or not os.access(BASE_DIR, os.W_OK)
 
 
 class Config:
     # ── Security ──────────────────────────────────────────────────────────────
     SECRET_KEY = os.environ.get("SECRET_KEY", "metashield-secret-key-change-in-production")
     WTF_CSRF_ENABLED = True
+    DEBUG = not _is_vercel
 
     # ── Upload settings ───────────────────────────────────────────────────────
     if IS_SERVERLESS:
