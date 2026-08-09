@@ -12,7 +12,7 @@
 [![Vercel](https://img.shields.io/badge/Deployed-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://meta-shield-2xyi.vercel.app/)
 [![License](https://img.shields.io/badge/License-MIT-22C55E?style=for-the-badge)](LICENSE)
 
-###  [View Live Project](https://meta-shield-2xyi.vercel.app/)
+### 🌐 [View Live Project](https://meta-shield-2xyi.vercel.app/) 🌐
 
 
 > A production-ready cybersecurity web application for digital forensics professionals,  
