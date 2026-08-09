@@ -538,7 +538,12 @@ function saveMetadata() {
   .then(data => {
     if (!data.success) { showToast(data.error || 'Save failed', 'error'); return; }
     showToast(`✓ Saved! Downloading edited image…`, 'success');
-    window.location.href = '/download/' + data.download_name;
+    const dlName = data.download_name;
+    if (dlName && typeof dlName === 'string' && dlName !== 'undefined' && dlName !== 'null') {
+      window.location.href = '/download/' + encodeURIComponent(dlName);
+    } else {
+      showToast('Download ready but filename missing', 'warning');
+    }
   })
   .catch(() => showToast('Save error', 'error'));
 }
@@ -592,7 +597,14 @@ function cleanMetadata() {
     `;
 
     showToast('✓ Metadata removed! Downloading…', 'success');
-    setTimeout(() => { window.location.href = '/download/' + data.download_name; }, 800);
+    const dlName = data.download_name;
+    setTimeout(() => {
+      if (dlName && typeof dlName === 'string' && dlName !== 'undefined' && dlName !== 'null') {
+        window.location.href = '/download/' + encodeURIComponent(dlName);
+      } else {
+        showToast('Clean done but download filename missing', 'warning');
+      }
+    }, 800);
   })
   .catch(() => showToast('Clean error', 'error'));
 }
@@ -655,7 +667,14 @@ function batchClean() {
   .then(data => {
     if (!data.success) { showToast(data.error || 'Batch failed', 'error'); return; }
     showToast(`✓ ${data.results.filter(r=>r.success).length} files cleaned! Downloading ZIP…`, 'success');
-    setTimeout(() => { window.location.href = '/download_zip/' + data.zip_name; }, 800);
+    const zipName = data.zip_name;
+    setTimeout(() => {
+      if (zipName && typeof zipName === 'string' && zipName !== 'undefined' && zipName !== 'null') {
+        window.location.href = '/download_zip/' + encodeURIComponent(zipName);
+      } else {
+        showToast('Batch done but ZIP filename missing', 'warning');
+      }
+    }, 800);
   })
   .catch(() => showToast('Batch error', 'error'));
 }
@@ -755,8 +774,10 @@ function closeFullscreen() {
 }
 
 function downloadOriginal() {
-  if (MS.currentFile) {
-    window.location.href = '/download/' + MS.currentFile;
+  if (MS.currentFile && typeof MS.currentFile === 'string') {
+    window.location.href = '/download/' + encodeURIComponent(MS.currentFile);
+  } else {
+    showToast('No file uploaded yet', 'warning');
   }
 }
 

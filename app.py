@@ -294,11 +294,18 @@ def edit():
         return error_response("No edits provided.")
 
     safe = sanitise_filename(filename)
-    src = os.path.join(app.config["UPLOAD_FOLDER"], safe)
-    if not os.path.isfile(src):
+    # Find source file — check both configured folder and /tmp fallback (Vercel)
+    src = None
+    for folder in (app.config["UPLOAD_FOLDER"], "/tmp/metashield/uploads"):
+        candidate = os.path.join(folder, safe)
+        if os.path.isfile(candidate):
+            src = candidate
+            break
+    if not src:
         return error_response("File not found.", 404)
 
     # Save edited copy into downloads/
+    os.makedirs(app.config["DOWNLOAD_FOLDER"], exist_ok=True)
     base, ext = os.path.splitext(safe)
     dst_name = f"edited_{base}{ext}"
     dst = os.path.join(app.config["DOWNLOAD_FOLDER"], dst_name)
@@ -333,10 +340,17 @@ def remove():
         return error_response("filename is required.")
 
     safe = sanitise_filename(filename)
-    src = os.path.join(app.config["UPLOAD_FOLDER"], safe)
-    if not os.path.isfile(src):
+    # Find source file — check both configured folder and /tmp fallback (Vercel)
+    src = None
+    for folder in (app.config["UPLOAD_FOLDER"], "/tmp/metashield/uploads"):
+        candidate = os.path.join(folder, safe)
+        if os.path.isfile(candidate):
+            src = candidate
+            break
+    if not src:
         return error_response("File not found.", 404)
 
+    os.makedirs(app.config["DOWNLOAD_FOLDER"], exist_ok=True)
     base, ext = os.path.splitext(safe)
     dst_name = f"clean_{base}{ext}"
     dst = os.path.join(app.config["DOWNLOAD_FOLDER"], dst_name)
@@ -473,23 +487,31 @@ def api_history():
 
 @app.route("/download/<path:filename>")
 def download(filename: str):
-    """Download a file from uploads or downloads folder."""
+    """Download a file. Checks all possible folders including /tmp on Vercel."""
     safe = sanitise_filename(filename)
-    # Check downloads first, then uploads
-    for folder in (app.config["DOWNLOAD_FOLDER"], app.config["UPLOAD_FOLDER"]):
+    # Search order: downloads, uploads, then /tmp equivalents
+    search_folders = [
+        app.config["DOWNLOAD_FOLDER"],
+        app.config["UPLOAD_FOLDER"],
+        "/tmp/metashield/downloads",
+        "/tmp/metashield/uploads",
+    ]
+    for folder in search_folders:
         filepath = os.path.join(folder, safe)
         if os.path.isfile(filepath):
             return send_from_directory(folder, safe, as_attachment=True)
-    abort(404)
+    return jsonify({"success": False, "error": f"File not found: {safe}"}), 404
 
 
 @app.route("/download_zip/<path:filename>")
 def download_zip(filename: str):
     safe = sanitise_filename(filename)
-    filepath = os.path.join(app.config["DOWNLOAD_FOLDER"], safe)
-    if not os.path.isfile(filepath):
-        abort(404)
-    return send_from_directory(app.config["DOWNLOAD_FOLDER"], safe, as_attachment=True)
+    # Check configured folder and /tmp fallback
+    for folder in (app.config["DOWNLOAD_FOLDER"], "/tmp/metashield/downloads"):
+        filepath = os.path.join(folder, safe)
+        if os.path.isfile(filepath):
+            return send_from_directory(folder, safe, as_attachment=True)
+    return jsonify({"success": False, "error": f"ZIP not found: {safe}"}), 404
 
 
 # ── API: Delete ───────────────────────────────────────────────────────────────
