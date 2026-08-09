@@ -647,9 +647,17 @@ def preview(filename: str):
 
 @app.errorhandler(404)
 def not_found(e):
-    if request.is_json or request.path.startswith(("/upload", "/metadata", "/api")):
+    # Return JSON only for API/AJAX endpoints, HTML for all page routes
+    api_paths = ("/upload", "/metadata", "/edit", "/remove", "/batch_remove",
+                 "/download", "/download_zip", "/delete", "/export", "/analytics",
+                 "/compare", "/preview")
+    if request.is_json or request.path.startswith(api_paths):
         return jsonify({"success": False, "error": "Not found."}), 404
-    return render_template("index.html"), 404
+    # For all page routes, serve the app shell (SPA-style fallback)
+    try:
+        return render_template("index.html"), 404
+    except Exception:
+        return jsonify({"success": False, "error": "Not found."}), 404
 
 
 @app.errorhandler(413)
