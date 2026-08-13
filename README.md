@@ -164,7 +164,7 @@ MetaShield/
 | `Ctrl + B` | Toggle sidebar |
 | `Ctrl + T` | Toggle dark / light theme |
 | `F` | Fullscreen image preview |
-| `Esc` | Close fullscreen |
+| `Esc` | Close  |
 
 ---
 
